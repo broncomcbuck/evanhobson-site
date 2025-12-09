@@ -1,0 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Literata:wght@300;400;500;600&display=swap');
+
+@import "tailwindcss";
+
+@layer base {
+  html {
+    font-family: 'Inter', sans-serif;
+    background-color: #F8F7F4;
+    color: #1F1F1D;
+    line-height: 1.65;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+  }
+}
