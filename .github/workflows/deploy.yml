@@ -13,7 +13,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Build with Astro
+    name: Build and Upload Astro site
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,7 +27,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build site using Astro
+      - name: Build and upload with Astro
         uses: withastro/action@v1
         with:
           path: .
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
