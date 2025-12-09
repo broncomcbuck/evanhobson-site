@@ -1,12 +1,35 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import RootAnimation from "../components/RootAnimation.astro";
 ---
 
 <BaseLayout title="Evan Hobson — Ecological Modeling">
-  <h1 class="font-serif text-4xl mb-4">Evan Hobson</h1>
-  <p class="text-xl text-text-secondary mb-16">
+  <h1 class="font-serif text-4xl mb-2">Evan Hobson</h1>
+  <p class="text-xl text-text-secondary mb-12">
     Ecological modeling · wildlife movement · computational analysis
   </p>
 
-  <p class="text-text-secondary">Site under construction.</p>
+  <section class="space-y-4">
+    <a href="/about" class="block p-4 bg-surface border border-border rounded-soft shadow-sm hover:bg-accent-secondary/10 transition">
+      <h2 class="font-serif text-2xl text-text-primary">About</h2>
+      <p class="text-text-secondary text-sm">Background & philosophy</p>
+    </a>
+
+    <a href="/research" class="block p-4 bg-surface border border-border rounded-soft shadow-sm hover:bg-accent-secondary/10 transition">
+      <h2 class="font-serif text-2xl text-text-primary">Research</h2>
+      <p class="text-text-secondary text-sm">Models, findings, methods</p>
+    </a>
+
+    <a href="/writing" class="block p-4 bg-surface border border-border rounded-soft shadow-sm hover:bg-accent-secondary/10 transition">
+      <h2 class="font-serif text-2xl text-text-primary">Writing</h2>
+      <p class="text-text-secondary text-sm">Essays, notes, reflections</p>
+    </a>
+
+    <a href="/cv" class="block p-4 bg-surface border border-border rounded-soft shadow-sm hover:bg-accent-secondary/10 transition">
+      <h2 class="font-serif text-2xl text-text-primary">CV & Contact</h2>
+      <p class="text-text-secondary text-sm">Résumé, email, links</p>
+    </a>
+  </section>
+
+  <RootAnimation />
 </BaseLayout>
