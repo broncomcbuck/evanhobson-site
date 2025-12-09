@@ -1,4 +1,7 @@
 export default {
+  content: [
+    './src/**/*.{astro,html,js,jsx,ts,tsx,vue,svelte}',
+  ],
   theme: {
     extend: {
       colors: {
@@ -9,8 +12,8 @@ export default {
           secondary: '#575652',
         },
         accent: {
-          primary: '#6F8F72',   // sage green
-          secondary: '#C8A58C', // clay
+          primary: '#6F8F72',
+          secondary: '#C8A58C',
         },
         border: '#EAE7E1',
       },

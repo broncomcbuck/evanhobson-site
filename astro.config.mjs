@@ -1,9 +1,7 @@
 import { defineConfig } from 'astro/config';
-import tailwind from '@tailwindcss/vite';
+import tailwind from '@astrojs/tailwind';
 
 export default defineConfig({
   site: 'https://evanhobson.com',
-  vite: {
-    plugins: [tailwind()]
-  }
+  integrations: [tailwind()],
 });
