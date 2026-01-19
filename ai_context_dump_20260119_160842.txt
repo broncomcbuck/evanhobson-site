@@ -1,0 +1,1645 @@
+===== EVANHOBSON-SITE CONTEXT DUMP =====
+Generated: 2026-01-19T16:08:42-07:00
+PWD: /home/evan/evanhobson-site
+
+===== GOALS / NOTES (if present) =====
+ - 󰂺 README.md
+
+----- README.md -----
+# Astro Starter Kit: Minimal
+
+```sh
+npm create astro@latest -- --template minimal
+```
+
+> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+
+## 🚀 Project Structure
+
+Inside of your Astro project, you'll see the following folders and files:
+
+```text
+/
+├── public/
+├── src/
+│   └── pages/
+│       └── index.astro
+└── package.json
+```
+
+Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+
+There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+
+Any static assets, like images, can be placed in the `public/` directory.
+
+## 🧞 Commands
+
+All commands are run from the root of the project, from a terminal:
+
+| Command                   | Action                                           |
+| :------------------------ | :----------------------------------------------- |
+| `npm install`             | Installs dependencies                            |
+| `npm run dev`             | Starts local dev server at `localhost:4321`      |
+| `npm run build`           | Build your production site to `./dist/`          |
+| `npm run preview`         | Preview your build locally, before deploying     |
+| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
+| `npm run astro -- --help` | Get help using the Astro CLI                     |
+
+## 👀 Want to learn more?
+
+Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+
+===== GIT STATUS =====
+## main...origin/main
+ M astro.config.mjs
+ D src/components/RootAnimation.astro
+ M src/layouts/BaseLayout.astro
+ M src/pages/index.astro
+ M src/pages/research.astro
+ M src/pages/writing.astro
+ M src/styles/global.css
+ M tailwind.config.js
+?? ai_context.txt
+?? ai_context_dump_20260119_160842.txt
+?? public/contours/
+?? public/images/
+?? public/scripts/
+?? site-core.txt
+?? src/components/NavBar.astro
+?? src/components/NavBar.astro.bak
+?? src/components/ScrollDots.astro
+?? src/layouts/BaseLayout.astro.bak
+?? src/layouts/SnapLayout.astro
+?? src/pages/projects.astro
+?? src/pages/work.astro
+?? src/pages/writing/
+?? src/scripts/
+?? src/styles/global.css.bak_darkfix
+?? src/styles/global.css.bak_theme
+?? tree.txt
+
+===== RECENT COMMITS =====
+d6a6da1 (HEAD -> main, origin/main) Add scroll-activated root animation base
+001e8ca Add components folder with RootAnimation.astro
+ec8d6cb Fix: add deploy job using actions/deploy-pages@v4
+292870d Fix: add deploy job using actions/deploy-pages@v4
+c799c23 Fix: use withastro/action for GitHub Pages deployment
+4759151 Trigger redeploy
+af2f7c5 Update GitHub Actions workflow to use v4 deploy actions
+85b62ac Fix Tailwind config and global styles for v3
+e539aee Add GitHub Actions deploy and CNAME for evanhobson.com
+4763574 Create CNAME
+beccbd9 Initial placeholder site
+
+===== TREE (excluding node_modules, dist, .git, large assets) =====
+.
+├── ai_context_dump_20260119_160842.txt
+├── ai_context.txt
+├── astro.config.mjs
+├── CNAME
+├── .github
+│   └── workflows
+│       └── deploy.yml
+├── .gitignore
+├── package.json
+├── package-lock.json
+├── public
+│   ├── CNAME
+│   ├── contours
+│   │   ├── contours-soft.svg
+│   │   └── topo-tall.svg
+│   ├── favicon.svg
+│   ├── images
+│   ├── lib
+│   └── scripts
+│       └── theme-toggle.js
+├── README.md
+├── site-core.txt
+├── src
+│   ├── assets
+│   │   └── contours
+│   ├── components
+│   │   ├── NavBar.astro
+│   │   ├── NavBar.astro.bak
+│   │   ├── ScrollDots.astro
+│   │   └── visual
+│   ├── layouts
+│   │   ├── BaseLayout.astro
+│   │   ├── BaseLayout.astro.bak
+│   │   └── SnapLayout.astro
+│   ├── lib
+│   ├── pages
+│   │   ├── about.astro
+│   │   ├── cv.astro
+│   │   ├── index.astro
+│   │   ├── projects.astro
+│   │   ├── research.astro
+│   │   ├── work.astro
+│   │   ├── writing
+│   │   │   └── permission-to-feel-power-to-become.astro
+│   │   └── writing.astro
+│   ├── scripts
+│   │   └── theme-toggle.js
+│   └── styles
+│       ├── global.css
+│       ├── global.css.bak_darkfix
+│       └── global.css.bak_theme
+├── tailwind.config.js
+├── tree.txt
+├── tsconfig.json
+└── .vscode
+    ├── extensions.json
+    └── launch.json
+
+20 directories, 38 files
+
+===== KEY CONFIG FILES =====
+----- package.json -----
+{
+  "name": "",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/tailwind": "^6.0.2",
+    "@tailwindcss/vite": "^4.1.17",
+    "astro": "^5.16.4",
+    "tailwindcss": "^3.4.1"
+  }
+}
+
+----- astro.config.mjs -----
+import { defineConfig } from "astro/config";
+import tailwind from "@astrojs/tailwind";
+
+export default defineConfig({
+  integrations: [tailwind()],
+  vite: {
+    esbuild: {
+      charset: "utf8",
+    },
+  },
+});
+
+----- tsconfig.json -----
+{
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["dist"]
+}
+
+----- tailwind.config.js -----
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: ["./src/**/*.{astro,html,js,ts,jsx,tsx,vue,svelte}"],
+  theme: {
+    extend: {
+      colors: {
+        sage: "#6F8F72",
+        tan: "#F8F7F4",
+        dark: "#2E2D2B",
+        sand: "#F3EBDD",
+        clay: "#C7A27D",
+        mesa: "#A36D3A",
+        bark: "#3B2F2F",
+      },
+      fontFamily: {
+        sans: ["Inter", "system-ui", "sans-serif"],
+        serif: ["Literata", "Georgia", "serif"],
+      },
+    },
+  },
+  plugins: [],
+};
+
+===== STYLES =====
+----- src/styles/global.css -----
+/* ======================================================= */
+/* GLOBAL BASE STYLES                                      */
+/* ======================================================= */
+
+:root {
+  --nav-h: 54px;
+
+  /* “paper” palette */
+  --paper-0: #f8f7f4;
+  --paper-1: #f1ede6;
+  --paper-2: #e9e2d7;
+
+  --ink: #2a1b0f;
+  --muted: #4a4036;
+
+  --card: rgba(255, 255, 255, 0.92);
+  --card-border: rgba(0, 0, 0, 0.06);
+  --shadow: 0 20px 45px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--ink);
+
+  /* ✅ Professional “paper” background (not plain white) */
+  background:
+    radial-gradient(1200px 700px at 20% 10%, rgba(163, 109, 58, 0.08), transparent 60%),
+    radial-gradient(900px 600px at 80% 30%, rgba(111, 143, 114, 0.08), transparent 55%),
+    linear-gradient(to bottom, var(--paper-2) 0%, var(--paper-1) 40%, var(--paper-0) 100%);
+
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* ✅ fixes “content under navbar” everywhere */
+  padding-top: var(--nav-h);
+}
+
+/* Box sizing sanity */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Media defaults */
+img,
+svg {
+  max-width: 100%;
+  display: block;
+}
+
+/* Code / ASCII safety */
+pre {
+  white-space: pre;
+  font-family: monospace;
+  margin: 0;
+}
+
+/* Generic container */
+.container {
+  width: min(1100px, calc(100% - 3rem));
+  margin-inline: auto;
+}
+
+/* ======================================================= */
+/* Progressive enhancement for SnapLayout animations       */
+/* - Without JS: content is visible                        */
+/* - With JS: we fade/slide in via .visible toggles        */
+/* ======================================================= */
+
+html.js .content {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.65s ease, transform 0.8s ease;
+}
+
+html.js .content.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ===== Content Pages (Research / Projects / Writing) ===== */
+
+.page {
+  width: min(900px, calc(100% - 3rem));
+  margin: 0 auto;
+  padding: clamp(2.5rem, 5vw, 4rem) 0;
+}
+
+.page h1 {
+  font-family: "Literata", Georgia, serif;
+  font-size: clamp(2.1rem, 3.5vw, 2.8rem);
+  margin: 0 0 0.75rem;
+  color: #2d241b;
+}
+
+.page .intro {
+  max-width: 75ch;
+  margin: 0 0 2rem;
+  font-size: 1.08rem;
+  line-height: 1.75;
+  color: var(--muted);
+}
+
+.list {
+  display: grid;
+  gap: 1.4rem;
+}
+
+.item {
+  padding: 1.25rem 1.3rem 1.35rem;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.85);
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+}
+
+.item h2 {
+  font-family: "Literata", Georgia, serif;
+  font-size: 1.35rem;
+  margin: 0 0 0.5rem;
+  color: #2d241b;
+}
+
+.item p {
+  margin: 0 0 0.5rem;
+  line-height: 1.7;
+  color: rgba(45,36,27,0.80);
+}
+
+.item p:last-of-type {
+  margin-bottom: 0.75rem;
+}
+
+.item .meta {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(45,36,27,0.60);
+}
+
+.item a {
+  display: inline-block;
+  margin-top: 0.4rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: rgba(45,36,27,0.95);
+  border-bottom: 1px solid rgba(0,0,0,0.25);
+}
+
+.item a:hover {
+  border-bottom-color: rgba(0,0,0,0.45);
+}
+
+/* ===== Essay helpers (anchors + selection) ===== */
+:target { scroll-margin-top: calc(var(--nav-h) + 18px); }
+
+/* ===== Unified site background (disable stripes) ===== */
+html, body {
+  background: #f2eee6;
+  background-image: none !important;
+}
+
+
+
+:root {
+  /* typography */
+  --font-serif: "Literata", Georgia, serif;
+  --font-sans: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+
+  /* radii */
+  --r-lg: 16px;
+  --r-xl: 22px;
+
+  /* light theme */
+  --bg: #f3efe7;
+  --surface: #fbfaf7;
+  --surface-2: #f6f3ec;
+  --text: #1d1b16;
+  --text-2: rgba(29,27,22,0.82);
+  --muted: rgba(29,27,22,0.62);
+  --border: rgba(29,27,22,0.12);
+
+  /* accent: slightly sharper green/earth */
+  --accent: #6f8f72;
+
+  /* shadows: crisper, less fog */
+  --shadow: 0 14px 34px rgba(0,0,0,0.12);
+}
+
+/* Universal dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1113;
+    --surface: #14171a;
+    --surface-2: #191d21;
+    --text: #f2f3f4;
+    --text-2: rgba(242,243,244,0.84);
+    --muted: rgba(242,243,244,0.64);
+    --border: rgba(242,243,244,0.14);
+    --accent: #88b58e; /* brighter in dark */
+    --shadow: 0 16px 38px rgba(0,0,0,0.45);
+  }
+}
+
+/* Apply tokens globally */
+html, body {
+  background: var(--bg) !important;
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+a { color: inherit; }
+
+/* Improve contrast of default text elements */
+p, li {
+  color: var(--text-2);
+}
+
+/* Make headings crisp */
+h1, h2, h3, h4 {
+  color: var(--text);
+}
+
+/* Inputs/selection (optional but helps polish) */
+::selection {
+  background: color-mix(in oklab, var(--accent) 30%, transparent);
+}
+
+/* Ensure any old background images/patterns don’t cause striping */
+body {
+  background-image: none !important;
+}
+
+
+
+:root {
+  --font-serif: "Literata", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  --r-lg: 16px;
+  --r-xl: 22px;
+
+  --bg: #f3efe7;
+  --surface: #fbfaf7;
+  --surface-2: #f6f3ec;
+  --text: #1d1b16;
+  --text-2: rgba(29,27,22,0.82);
+  --muted: rgba(29,27,22,0.62);
+  --border: rgba(29,27,22,0.12);
+  --accent: #6f8f72;
+  --shadow: 0 14px 34px rgba(0,0,0,0.12);
+}
+
+/* DARK MODE */
+[data-theme="dark"] {
+  --bg: #0f1113;
+  --surface: #14171a;
+  --surface-2: #191d21;
+  --text: #f2f3f4;
+  --text-2: rgba(242,243,244,0.84);
+  --muted: rgba(242,243,244,0.64);
+  --border: rgba(242,243,244,0.14);
+  --accent: #88b58e;
+  --shadow: 0 16px 38px rgba(0,0,0,0.45);
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+a { color: inherit; }
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 35%, transparent);
+}
+
+/* ===== THEME TOKENS (manual toggle, high contrast) ===== */
+
+/* LIGHT MODE */
+[data-theme="light"] {
+  --bg: #f5f7fa;            /* neutral light gray */
+  --surface: #ffffff;      /* cards / panels */
+  --surface-2: #f0f2f5;    /* subtle contrast */
+  --text: #0f172a;         /* near-black */
+  --text-2: #334155;       /* slate */
+  --muted: #64748b;        /* cool gray */
+  --border: rgba(15,23,42,0.12);
+
+  /* accent: restrained sage/steel */
+  --accent: #4f766a;
+
+  --shadow: 0 12px 28px rgba(15,23,42,0.12);
+}
+
+/* DARK MODE */
+[data-theme="dark"] {
+  --bg: #0b0f14;            /* deep ink */
+  --surface: #121821;      /* panels */
+  --surface-2: #18202c;    /* hover / alt */
+  --text: #e5e7eb;         /* near-white */
+  --text-2: #cbd5e1;       /* light slate */
+  --muted: #94a3b8;
+  --border: rgba(226,232,240,0.14);
+
+  --accent: #7fb3a3;       /* brighter in dark */
+
+  --shadow: 0 18px 42px rgba(0,0,0,0.55);
+}
+
+/* GLOBAL APPLICATION */
+
+===== LAYOUTS =====
+----- src/layouts/BaseLayout.astro -----
+---
+import "../styles/global.css";
+import NavBar from "../components/NavBar.astro";
+
+const {
+  title = "Evan Hobson — Ecological Modeling",
+  description = "Ecological modeling, wildlife movement, and computational analysis by Evan Hobson.",
+  canonical,
+} = Astro.props;
+
+const canonicalUrl =
+  typeof canonical === "string" && canonical.length > 0 ? canonical : undefined;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+
+    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+
+    <meta name="theme-color" content="#F8F7F4" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary" />
+
+    <slot name="head" />
+    <script is:inline src="/scripts/theme-toggle.js"></script>
+  </head>
+
+  <body>
+    <NavBar />
+
+    <main class="container">
+      <slot />
+    </main>
+  </body>
+</html>
+
+----- src/layouts/SnapLayout.astro -----
+---
+import "../styles/global.css";
+import NavBar from "../components/NavBar.astro";
+import ScrollDots from "../components/ScrollDots.astro";
+---
+
+<NavBar />
+<ScrollDots />
+
+<div class="snap-container" id="snap-root">
+  <slot />
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // turn on progressive enhancement styles
+    document.documentElement.classList.add("js");
+
+    const container = document.querySelector("#snap-root");
+    if (!container) return;
+
+    const sections = Array.from(container.querySelectorAll(".snap-section"));
+    const contents = Array.from(container.querySelectorAll(".snap-section .content"));
+
+    // Start visible if JS fails mid-way (safety)
+    contents.forEach((c) => c.classList.add("visible"));
+
+    // Now apply animated behavior (hide then reveal as we intersect)
+    // This avoids “blank page” if observer fails.
+    requestAnimationFrame(() => {
+      contents.forEach((c) => c.classList.remove("visible"));
+
+      // reveal the first section shortly after load
+      const first = sections[0]?.querySelector(".content");
+      if (first) setTimeout(() => first.classList.add("visible"), 120);
+    });
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const content = entry.target.querySelector(".content");
+          if (!content) continue;
+
+          if (entry.isIntersecting) {
+            // small delay so snap feels intentional
+            setTimeout(() => content.classList.add("visible"), 120);
+          } else {
+            content.classList.remove("visible");
+          }
+        }
+      },
+      {
+        root: container,
+        threshold: 0.58,
+      }
+    );
+
+    sections.forEach((s) => observer.observe(s));
+  });
+</script>
+
+<style>
+.snap-container {
+  /* ✅ this fixes the “extra scroll” weirdness */
+  height: calc(100vh - var(--nav-h));
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  scroll-snap-type: y mandatory;
+  scroll-padding-top: 18px; /* keeps snapped content comfy under the navbar */
+  overscroll-behavior-y: contain;
+
+  /* don’t add padding-top here (body already has it) */
+  padding: 0;
+  margin: 0;
+}
+</style>
+
+===== COMPONENTS =====
+----- src/components/NavBar.astro -----
+---
+const currentPath = Astro.url.pathname;
+const isActive = (href) => {
+  if (href === "/") return currentPath === "/";
+  return currentPath.startsWith(href);
+};
+---
+
+<nav class="topnav">
+  <div class="nav-inner">
+    <div class="links">
+      <a class={isActive("/") ? "active" : ""} href="/">Home</a>
+      <a class={isActive("/about") ? "active" : ""} href="/about">About</a>
+      <a class={isActive("/research") ? "active" : ""} href="/research">Research</a>
+      <a class={isActive("/projects") ? "active" : ""} href="/projects">Projects</a>
+      <a class={isActive("/writing") ? "active" : ""} href="/writing">Writing</a>
+      <a class={isActive("/cv") ? "active" : ""} href="/cv">CV</a>
+    </div>
+
+    <button
+      class="theme-toggle"
+      aria-label="Toggle light/dark mode"
+      onclick="toggleTheme()"
+      title="Toggle light/dark mode"
+    >
+      ◐
+    </button>
+  </div>
+</nav>
+
+<style>
+.topnav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--nav-h);
+  display: flex;
+  justify-content: center;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  z-index: 5000;
+}
+
+.nav-inner {
+  width: min(1100px, calc(100% - 3rem));
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.links {
+  display: flex;
+  gap: 1.1rem;
+}
+
+.links a {
+  font-weight: 650;
+  text-decoration: none;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+}
+
+.links a.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.45rem 0.55rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  background: var(--surface-2);
+}
+</style>
+
+----- src/components/ScrollDots.astro -----
+<div class="scroll-dots" aria-label="Section navigation">
+  <button class="dot active" data-target="sky" aria-label="About (hero)"></button>
+  <button class="dot" data-target="plateau" aria-label="What I study"></button>
+  <button class="dot" data-target="plants" aria-label="Projects"></button>
+  <button class="dot" data-target="roots" aria-label="Why"></button>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const container = document.querySelector("#snap-root");
+    const sections = document.querySelectorAll(".snap-section");
+    const dots = document.querySelectorAll(".scroll-dots .dot");
+    if (!container || sections.length === 0) return;
+
+    // highlight current section dot
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const id = entry.target.id;
+
+          dots.forEach((dot) => {
+            dot.classList.toggle("active", dot.dataset.target === id);
+          });
+        }
+      },
+      { root: container, threshold: 0.6 }
+    );
+
+    sections.forEach((s) => observer.observe(s));
+
+    // click = scroll the snap container (NOT the document)
+    dots.forEach((dot) => {
+      dot.addEventListener("click", () => {
+        const targetId = dot.dataset.target;
+        const section = document.getElementById(targetId);
+        if (!section) return;
+
+        // offsetTop is relative to the nearest offset parent; for our layout this works.
+        // We scroll the container directly to avoid scrollIntoView affecting the page.
+        container.scrollTo({
+          top: section.offsetTop,
+          behavior: "smooth",
+        });
+      });
+    });
+  });
+</script>
+
+<style>
+.scroll-dots {
+  position: fixed;
+  right: 1.5rem;
+  top: calc(var(--nav-h) + 50%);
+  transform: translateY(-50%);
+  z-index: 2000;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+
+  border: 2px solid rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+
+  transition: background 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+
+.dot.active {
+  background: #5d3c28;
+  border-color: #5d3c28;
+  transform: scale(1.3);
+}
+</style>
+
+===== PAGES =====
+----- src/pages/about.astro -----
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="About – Evan Hobson">
+  <h1 class="font-serif text-3xl mb-4">About</h1>
+  <p class="text-text-secondary">
+    This is the About page. Write about your background, interests, and philosophy here.
+  </p>
+</BaseLayout>
+
+----- src/pages/cv.astro -----
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="CV & Contact – Evan Hobson">
+  <h1 class="font-serif text-3xl mb-4">CV & Contact</h1>
+  <p class="text-text-secondary">
+    Add your CV or résumé content here. Include a downloadable PDF and contact links.
+  </p>
+</BaseLayout>
+
+----- src/pages/index.astro -----
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Evan Hobson — Ecological Modeling"
+  description="Ecological modeling, movement ecology, and computational analysis by Evan Hobson."
+>
+  <div class="home">
+    <!-- HERO: Quick bio only -->
+    <section class="hero">
+      <div class="hero-inner">
+        <div class="hero-grid">
+          <div class="photo">
+            <img src="/images/evan.jpg" alt="Evan Hobson" loading="eager" />
+          </div>
+
+          <div class="bio">
+            <p class="kicker">Ecological modeling • movement ecology • computation</p>
+            <h1>Evan Hobson</h1>
+            <p class="lead">
+              I build quantitative tools to understand how animals move through real landscapes —
+              and how management decisions shape outcomes.
+            </p>
+
+            <div class="bio-links">
+              <a class="textlink" href="/about">About</a>
+              <span class="sep">•</span>
+              <a class="textlink" href="/cv">CV</a>
+              <span class="sep">•</span>
+              <a class="textlink" href="/research">Research</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- START: fully separate navigation panel -->
+    <section class="start" aria-label="Site sections">
+      <div class="start-inner">
+        <div class="start-head">
+          <h2>Start here</h2>
+          <p>
+            Choose a section. Each is intentionally scoped: <strong>Research</strong> is formal work,
+            <strong>Projects</strong> are exploratory but rigorous, and <strong>Writing</strong> is
+            formal essays.
+          </p>
+        </div>
+
+        <div class="start-grid">
+          <a class="card" href="/research">
+            <div class="card-top">
+              <h3>Research</h3>
+              <span class="tag">Advisor-grade</span>
+            </div>
+            <p>
+              Movement ecology and spatial modeling—questions, methods, datasets, and results.
+            </p>
+            <span class="go">Explore Research →</span>
+          </a>
+
+          <a class="card" href="/projects">
+            <div class="card-top">
+              <h3>Projects</h3>
+              <span class="tag">Exploratory</span>
+            </div>
+            <p>
+              Rigorous side investigations—computational work, experiments, and long-running builds.
+            </p>
+            <span class="go">Browse Projects →</span>
+          </a>
+
+          <a class="card" href="/writing">
+            <div class="card-top">
+              <h3>Writing</h3>
+              <span class="tag">Essays</span>
+            </div>
+            <p>
+              Formal essays and extended analyses written to be read carefully rather than quickly.
+            </p>
+            <span class="go">Read Writing →</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <style>
+    .home {
+      padding: clamp(2.25rem, 4vw, 3.5rem) 0 clamp(2.5rem, 5vw, 4rem);
+    }
+
+    /* HERO */
+    .hero {
+      width: min(1100px, calc(100% - 3rem));
+      margin: 0 auto;
+    }
+
+    .hero-inner {
+      padding: clamp(1.6rem, 3vw, 2.5rem);
+      border-radius: var(--r-xl);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .photo img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: var(--r-lg);
+      border: 1px solid var(--border);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.18);
+    }
+
+    .kicker {
+      margin: 0 0 0.55rem;
+      font-size: 0.88rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 750;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(2.1rem, 3.3vw, 2.8rem);
+      margin: 0 0 0.55rem;
+      color: var(--text);
+      line-height: 1.12;
+    }
+
+    .lead {
+      margin: 0 0 1rem;
+      max-width: 70ch;
+      font-size: 1.08rem;
+      line-height: 1.75;
+      color: var(--text-2);
+    }
+
+    .bio-links {
+      display: flex;
+      gap: 0.7rem;
+      align-items: center;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    .textlink {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid color-mix(in oklab, var(--muted) 55%, transparent);
+      padding-bottom: 2px;
+    }
+
+    .textlink:hover {
+      color: var(--text);
+      border-bottom-color: color-mix(in oklab, var(--text) 45%, transparent);
+    }
+
+    .sep { opacity: 0.6; }
+
+    /* START SECTION (separate, crisp) */
+    .start {
+      width: min(1100px, calc(100% - 3rem));
+      margin: 1.1rem auto 0;
+    }
+
+    .start-inner {
+      padding: clamp(1.35rem, 2.8vw, 2.1rem);
+      border-radius: var(--r-xl);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .start-head h2 {
+      font-family: var(--font-serif);
+      margin: 0 0 0.35rem;
+      color: var(--text);
+      font-size: 1.55rem;
+      line-height: 1.2;
+    }
+
+    .start-head p {
+      margin: 0 0 1.1rem;
+      color: var(--text-2);
+      line-height: 1.7;
+      max-width: 85ch;
+    }
+
+    .start-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.9rem;
+    }
+
+    .card {
+      display: grid;
+      gap: 0.55rem;
+      padding: 1.05rem 1.1rem;
+      border-radius: var(--r-lg);
+      text-decoration: none;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      transition: transform 0.14s ease, border-color 0.14s ease, background 0.14s ease;
+      height: 100%;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: color-mix(in oklab, var(--accent) 40%, var(--border));
+      background: color-mix(in oklab, var(--surface-2) 85%, var(--accent));
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.8rem;
+    }
+
+    .card h3 {
+      margin: 0;
+      font-size: 1.15rem;
+      color: var(--text);
+      font-weight: 850;
+      letter-spacing: -0.01em;
+    }
+
+    .tag {
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 0.28rem 0.5rem;
+      border-radius: 999px;
+      background: color-mix(in oklab, var(--surface) 85%, transparent);
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--text-2);
+      line-height: 1.65;
+    }
+
+    .go {
+      margin-top: 0.2rem;
+      font-weight: 800;
+      color: var(--text);
+      border-bottom: 1px solid color-mix(in oklab, var(--text) 30%, transparent);
+      width: fit-content;
+      padding-bottom: 2px;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .photo { max-width: 340px; margin: 0 auto; }
+      .start-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</BaseLayout>
+
+----- src/pages/projects.astro -----
+
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Projects — Evan Hobson">
+  <section class="page">
+    <h1>Projects</h1>
+
+    <p class="intro">
+      Projects are exploratory investigations pursued with technical rigor but outside
+      the scope of formal research programs.
+    </p>
+
+    <div class="list">
+      <article class="item">
+        <h2>Game of Life ash distribution</h2>
+        <p>
+          A computational investigation into the distribution, structure, and frequency
+          of ash produced by random Game of Life soups.
+        </p>
+        <p class="meta">Focus: simulation, pattern analysis</p>
+        <a href="/projects/gol-ash">View project →</a>
+      </article>
+
+      <article class="item">
+        <h2>Computational ecology experiments</h2>
+        <p>
+          Small-scale modeling and simulation work exploring spatial processes,
+          emergence, and abstraction in ecological systems.
+        </p>
+        <p class="meta">Status: ongoing</p>
+      </article>
+    </div>
+  </section>
+</BaseLayout>
+
+
+----- src/pages/research.astro -----
+
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Research — Evan Hobson">
+  <section class="page">
+    <h1>Research</h1>
+
+    <p class="intro">
+      My research focuses on movement ecology and spatial modeling, with an emphasis on
+      mechanistic and data-driven approaches grounded in field observations.
+    </p>
+
+    <div class="list">
+      <article class="item">
+        <h2>Cattle movement and landscape use</h2>
+        <p>
+          Analysis of GPS-collared cattle to quantify habitat selection, movement behavior,
+          and responses to heterogeneous rangeland environments.
+        </p>
+        <p class="meta">Status: ongoing</p>
+        <a href="/research/cattle">View project →</a>
+      </article>
+
+      <article class="item">
+        <h2>Feral horse movement ecology</h2>
+        <p>
+          Movement analysis of feral horses examining space use, home range structure,
+          and landscape drivers across arid systems.
+        </p>
+        <p class="meta">Status: ongoing</p>
+        <a href="/research/horses">View project →</a>
+      </article>
+    </div>
+  </section>
+</BaseLayout>
+
+
+----- src/pages/work.astro -----
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Work — Evan Hobson">
+
+  <main class="work-page">
+
+    <!-- ========================= -->
+    <!-- RESEARCH SECTION          -->
+    <!-- ========================= -->
+    <section class="work-section">
+      <h1>Research</h1>
+      <p class="section-intro">
+        Supervised and publication-oriented research focused on ecological
+        modeling, movement dynamics, and quantitative analysis.
+      </p>
+
+      <div class="card-grid">
+
+        <article class="work-card">
+          <h2>Cattle Movement & Habitat Selection</h2>
+          <p class="work-meta">
+            Mechanistic RSF / SSF · Rangeland ecology · Idaho
+          </p>
+          <p>
+            Analysis of GPS-collared cattle to understand how grazing behavior
+            responds to vegetation structure, terrain, and management practices.
+            Emphasis on mechanistic and spatially explicit modeling approaches.
+          </p>
+        </article>
+
+        <article class="work-card">
+          <h2>Feral Horse Movement Dynamics</h2>
+          <p class="work-meta">
+            Movement ecology · Behavioral inference · Nevada
+          </p>
+          <p>
+            Investigation of feral horse space use and movement patterns across
+            heterogeneous landscapes, using trajectory analysis and time-series
+            methods to infer behavioral structure.
+          </p>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ========================= -->
+    <!-- PROJECTS & EXPLORATIONS   -->
+    <!-- ========================= -->
+    <section class="work-section">
+      <h1>Projects & Explorations</h1>
+      <p class="section-intro">
+        Independent technical work, long-term explorations, and computational
+        experiments that inform and support my research thinking.
+      </p>
+
+      <div class="card-grid">
+
+        <article class="work-card secondary">
+          <h2>Game of Life Ash Distributions</h2>
+          <p class="work-meta">
+            Cellular automata · Simulation · Pattern analysis
+          </p>
+          <p>
+            Systematic exploration of stable end-state (“ash”) distributions in
+            Conway’s Game of Life, combining large-scale simulation, batch
+            experimentation, and statistical characterization.
+          </p>
+        </article>
+
+        <article class="work-card secondary">
+          <h2>HPC & Modeling Toolchains</h2>
+          <p class="work-meta">
+            Julia · C++ · R · Reproducible workflows
+          </p>
+          <p>
+            Ongoing experimentation with high-performance computing workflows
+            for simulation-heavy ecological models, with an emphasis on
+            reproducibility and scaling.
+          </p>
+        </article>
+
+      </div>
+    </section>
+
+  </main>
+
+</BaseLayout>
+
+<style>
+/* ======================================================= */
+/* WORK PAGE LAYOUT                                        */
+/* ======================================================= */
+
+.work-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem 6rem;
+}
+
+/* ======================================================= */
+/* SECTION HEADERS                                         */
+/* ======================================================= */
+
+.work-section {
+  margin-bottom: 5rem;
+}
+
+.work-section h1 {
+  font-family: "Literata", serif;
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
+  color: #2d251a;
+}
+
+.section-intro {
+  max-width: 720px;
+  margin-bottom: 2.5rem;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: #4a4036;
+}
+
+/* ======================================================= */
+/* CARD GRID                                              */
+/* ======================================================= */
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.75rem;
+}
+
+/* ======================================================= */
+/* CARDS                                                  */
+/* ======================================================= */
+
+.work-card {
+  background: #fdfcf9;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  padding: 1.6rem 1.6rem 1.8rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+}
+
+.work-card.secondary {
+  background: #fbfaf7;
+}
+
+.work-card h2 {
+  font-family: "Literata", serif;
+  font-size: 1.35rem;
+  margin-bottom: 0.4rem;
+  color: #2d251a;
+}
+
+.work-meta {
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #7a6a58;
+  margin-bottom: 0.8rem;
+}
+
+.work-card p {
+  font-size: 1rem;
+  line-height: 1.65;
+  color: #3f362e;
+}
+</style>
+
+----- src/pages/writing.astro -----
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Writing — Evan Hobson">
+  <section class="page">
+    <h1>Writing</h1>
+
+    <p class="intro">
+      Formal essays and extended analyses. These pieces are written to be read carefully rather than
+      consumed quickly.
+    </p>
+
+    <div class="list">
+      <article class="item">
+        <h2>Permission to Feel, Power to Become</h2>
+        <p>
+          How emotional engagement can enable spiritual growth. A synthesis of scriptural patterns and
+          emotional theory, arguing that emotion is not weakness but a divine gift to guide and refine.
+        </p>
+        <p class="meta">Essay • 2024</p>
+        <a href="/writing/permission-to-feel-power-to-become">Read essay →</a>
+      </article>
+
+      <article class="item">
+        <h2>Notes on mechanistic modeling</h2>
+        <p>
+          A structured reflection on mechanistic approaches to ecological modeling and their role in
+          scientific inference.
+        </p>
+        <p class="meta">Essay • draft</p>
+      </article>
+    </div>
+  </section>
+</BaseLayout>
+
+----- src/pages/writing/permission-to-feel-power-to-become.astro -----
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+const title = "Permission to Feel, Power to Become";
+const subtitle = "How Emotional Engagement Can Enable Spiritual Growth";
+const date = "2024";
+---
+
+<BaseLayout title={`${title} — Evan Hobson`}>
+  <article class="essay">
+    <header class="essay-header">
+      <p class="kicker">Writing • Essay • {date}</p>
+      <h1>{title}</h1>
+      <p class="subtitle">{subtitle}</p>
+      <a class="back" href="/writing">← Back to Writing</a>
+    </header>
+
+    <div class="essay-body">
+      <p>Many faithful members of the Church of Jesus Christ of Latter-day Saints can point to a moment of severe struggle in their life, defined not only by its circumstances but also by the emotions surrounding the experience. The young returned missionary who grapples with anxiety after coming home. The mother who fights a suffocating sadness after the death of a child. The person who, feeling overwhelmed and distressed, holds back tears in a sacrament meeting as her children cry.</p>
+      <p>Certainly, one component of mortal life is to experience trials. President Eyring in General Conference admonished: “When all is said and done, we will have passed the test if we have learned in all our circumstances to treat them as if they were in serious trouble, and you will find yourself having a heart full of compassion for others.” But while trials are to be expected, the nature of our emotional response to them, and the role of emotion itself, seems uncertain. A faithful member may feel ashamed for struggling emotionally, believing that their suffering indicates spiritual weakness. Many Latter-day Saints wrestle quietly with the belief that faithful discipleship requires emotional restraint, stoicism, or relentless positivity.</p>
+      <p>Is this the case? Surely our trials are to be borne with “patience and long-suffering” (Alma 7:23). But does that imply that emotional pain should be suppressed, minimized, or ignored? Does faith require us to feel less? Careful reading of divine scripture and modern revelation may provide a different view. This paper aims to provide an initial framework for thinking about emotion as a necessary component of spiritual growth, and suggests that emotional engagement can enable disciples to engage more deeply with agency, growth, and covenant living.</p>
+
+      <h2>A Brief Defense of the Necessity of Emotion</h2>
+      <p>In order to prove that there is a need to accept, control, and embrace our emotions, there must first be confidence that emotions are an essential component of our eternal progression. Thus, the argument that emotion is necessary is set forward here.</p>
+      <p>God loves all His children (see 1 Nephi 11:17; John 3:16–17). We know from both scripture and our lived experience that He places great value on our growth and learning, ultimately intending to pass our “immortality and eternal life” (Moses 1:39). Modern revelation teaches that the ultimate goal is to become like our Heavenly Father and Heavenly Mother, receiving everything They have (Doctrine and Covenants 84:38).</p>
+      <p>We know that God is perfect (Matthew 5:48). He is omniscient, omnipresent, and omnipotent. As such, there is no possibility that God does not know perfectly how to bless us (Matthew 6:8), help us learn (2 Nephi 28:30), and lead us toward the ultimate goal for us, which is everything He has (Moses 1:39).</p>
+      <p>Thus, if God knows all things, loves us perfectly, wants us to have everything He has, and intends to teach us how to become like Him, then there cannot be accidents, coincidences, or mistakes in His orchestrations. This includes the fact that we have emotions and are created with emotions, which is plainly self-evident.</p>
+      <p>Therefore, it holds that emotion is a necessary component of our becoming like our Heavenly Father. It is not an accident or mistake that we have them.</p>
+
+      <h3>A Brief(er) Aside to the Defense of the Necessity of Emotion</h3>
+      <p>It is important to recognize the realities and limitations of this simple argument. We do not know the nature of God’s emotions, how He feels, or what role emotion plays in His eternal existence. We also do not know how emotion changes in the eternities. The claim being made in this paper is not that emotion will play the same role or have the same influence in eternity as it does in mortality. Further, this argument does not necessarily imply that every emotional experience is inherently good or helpful. Mortality is full of weakness, imperfection, and the potential for emotional distortion. Faith is to “believe in God” and “believe that he has all wisdom” even when “we cannot comprehend” all things, including the meaning and purpose of our emotional lives (Mosiah 4:9). While this is an argument for the necessity of emotion, it is not a complete theology of emotion.</p>
+
+      <h2>Additional Scriptural Evidence for Emotion</h2>
+      <p>The above logical argument depicting the necessity of emotion, while important and helpful, is not sufficient. We must also examine how emotion is actually demonstrated and used in scripture. Thus, this section provides a brief analysis of the reality of emotion as it stands within scripture. There is great value in examining scriptural patterns to discern how God intends His children to interact with emotion.</p>
+
+      <h3>Prophets and Their Emotion</h3>
+      <p>In Alma 29, we see Alma display great desire and discontent with his allotment in life, depicted by his wishing to be an angel (Alma 29:1). He then interprets this emotion, claiming he “sins in his wishing” (Alma 29:3). Alma does not suppress the emotion; rather, he recognizes it and then uses truth to reinterpret it. He remembers God’s goodness and mercy, ultimately finding joy and gratitude (Alma 29:10–14).</p>
+      <p>In 2 Nephi 4, we witness a distressed Nephi, whose “heart sorroweth” and whose “soul grieveth” in part due to the death of his father and the wickedness of his brethren (2 Nephi 4:17). Nephi tends to his sorrow by remembering his relationship with God and reflecting on God’s deliverance. His emotional life is not hidden or dismissed, but placed directly before the Lord in prayer. Nephi’s model shows emotional honesty paired with deliberate remembrance and covenant commitment.</p>
+      <p>Alma the Younger, in his attempts to relieve the deep emotional anguish caused by his sins, used his agency to latch on to what his father taught him regarding Jesus Christ. He recalled the name of Christ, cried within his heart, and experienced spiritual transformation (Alma 36:17–20). Emotion and repentance are tightly linked in this narrative.</p>
+      <p>Other examples of emotion are abundant in scripture. Jeramiah laments the people of Israel but remembers the Lord and the “hope” that comes through His mercy (Lamentations 3:19–24). The brother of Jared “did molten out of a rock sixteen small stones” and “did cry again unto the Lord” in a manner that suggests intensity and urgency (Ether 3:1–2). Joseph Smith in Liberty Jail expresses anguish, confusion, and pleading, yet receives comfort and perspective from the Lord (Doctrine and Covenants 121–123). These examples illustrate that emotion is not a flaw in prophets; it is part of their spiritual engagement.</p>
+
+      <h3>The Teachings of Christ and the Prophets on Emotion</h3>
+      <p>There are further teachings on emotion that come directly from the words of prophets as opposed to their actions. Lehi teaches that men exist “that they might have joy” (2 Nephi 2:25). King Benjamin calls disciples to “mourn with those that mourn” and “comfort those that stand in need of comfort” (Mosiah 18:9). Paul writes that charity “suffereth long” and “is kind” (1 Corinthians 13:4). These are emotional teachings—calls to feel compassion, patience, and empathy rather than merely to behave correctly.</p>
+
+      <h3>God and His Relational Responsiveness</h3>
+      <p>The most profound examples of the necessity of human emotion come from how God interacts with His children, be it with His sorrow, His compassion, or His tenderness. Consider the depiction by Zenos of God as the “Lord of the vineyard” in Jacob 5, where we see Him “grieve” for His children and labor tirelessly for their welfare (Jacob 5:11, 5:41). Like all of the things that God does, emotion-filled moments are given appropriate space, time, and respect. As a woman approaches Christ in the New Testament, we see that He honors her emotional devotion, validating her rather than condemning her (Luke 7:36–50). Christ weeps (John 11:35). He expresses anguish in Gethsemane (Luke 22:44). These are not dispassionate moments; they are deeply emotional and deeply holy.</p>
+      <p>There is no scriptural passage that condemns the experience of emotion itself; rather, scripture consistently condemns or warns against unrighteous expressions and uses of emotion—anger that becomes cruelty, sorrow that becomes despair, fear that becomes faithlessness. This implies that emotion is meant to be regulated and refined, not eradicated.</p>
+
+      <h2>Modern Emotional Theory and Scriptural Correlatives</h2>
+      <p>After examining scriptural patterns and lessons, a logical next step is to see how modern research and secular learning might relate to these ideas. That is, how does this idea of exhibiting and engaging with emotion align with what is known from psychology?</p>
+      <p>Emotional intelligence is a framework proposed for understanding and interpreting emotion. It can be defined as “the ability to monitor one's own and others' feelings and emotions, to discriminate among them and to use this information to guide one's thinking and actions.” Emotional intelligence involves recognizing and naming emotion, interpreting it, and using it constructively.</p>
+      <p>Another important discipline, emotional regulation, is defined as “the ability of an individual to modulate an emotion or set of emotions.” Emotional regulation can be further subdivided into two broad strategies: cognitive reappraisal and expressive suppression. Reappraisal involves reinterpreting the meaning of a situation to alter emotional response, while suppression involves inhibiting emotional expression once already aroused.</p>
+      <p>The connections here with scripture are striking and clarifying. The example of Nephi’s Psalm is effectively an act of reappraisal: in the midst of grief, Nephi remembers God’s goodness, interprets his suffering in light of his covenant relationship, and chooses to act in faith. Alma’s emotional reframing in Alma 29 similarly resembles reappraisal, in which he uses the emotionally taxing reality of limitation to reflect on divine mercy and find joy.</p>
+
+      <h2>Analysis, a Personal Note, and an Invitation</h2>
+      <p>The brief glance provided here of scripture reveals the importance of emotion in the lives of God’s children and in the lives of His prophets. A deeper look—one informed by both sacred texts and emotional theory—shows that feeling is not only a companion to faith, but a core part of our progression. Emotion can shape choices, refine discipleship, and enable Zion-building through empathy and compassion.</p>
+      <p>Still, this paper only begins to approach the actual depths of this topic. At this point it is valuable to step away briefly from the academic voice and speak personally. Developing emotional intelligence and emotional regulation can be transformative for discipleship. Many silently suffer not only from burdens, but from believing those burdens imply spiritual failure. A framework that grants “permission to feel” can also grant “power to become.”</p>
+      <p>This argument of the necessity of emotion as a facet of eternal progression is only an introduction. Opportunities to expand this philosophy are numerous, directly useful, and academically viable.</p>
+
+      <ul>
+        <li>Scriptural case studies: A more detailed examination of emotionally intense scriptural moments—Nephi’s Psalm (2 Nephi 4), Joseph Smith’s lamentations in Liberty Jail (D&amp;C 121–123), or Christ’s experiences in 3 Nephi 17—could reveal more specific patterns and show how disciples can handle specific feeling like betrayal, sorrow, and anguish.</li>
+        <li>Applied emotional theory in Church settings: Peer-reviewed research could investigate how emotional expression, validation, and emotional regulation, as taught and modeled by Church leaders and members, impact spiritual resilience, empathy, and community belonging in Latter-day Saint congregations.</li>
+        <li>Philosophical development: Further philosophical examination—in my personal opinion—could investigate the possibility that emotion is not only necessary for emotional progression, but may also be a meaningful component of God’s nature, shifting emotion from simply a reality to an eternal trait that we are developing.</li>
+        <li>Further research on the connections of religious lifestyle and emotional regulation: Studies exploring religiosity, emotional intelligence, and emotional regulation are finding that positive correlations exist between these variables, suggesting benefits of integrating emotion into religious worship and behavior.</li>
+      </ul>
+
+      <p>I hope it is clear to all readers the potential that is inherent to this framing of emotion in discipleship. Christ is described as “a man of sorrows, and acquainted with grief” (Isaiah 53:3). He endured suffering with full emotional capacity. If we are to become like Him, it follows that learning to feel, interpret, and refine emotion is part of the path. I believe that as we learn to engage with emotion with wisdom and faith, we will find greater love in our lives and the lives of others.</p>
+
+      <h2>Abstract</h2>
+      <p>This paper serves as an introduction into what the author considers to be a novel perspective and framework on emotion in gospel learning and growth. The claim is made that emotion is an essential component of eternal growth. A philosophical argument in favor of its necessity is outlined and followed by analysis of the processing and use of emotion as exhibited in scripture. A brief synthesis of emotion research is conducted, and similarities are drawn between both domains. The author proposes immediate means and future research through which these ideas can enable more complete individual and communal discipleship.</p>
+    </div>
+
+    <footer class="essay-footer">
+      <a class="back" href="/writing">← Back to Writing</a>
+    </footer>
+  </article>
+
+  <style>
+    .essay {
+      width: min(900px, calc(100% - 3rem));
+      margin: 0 auto;
+      padding: clamp(2.5rem, 5vw, 4rem) 0;
+    }
+
+    .essay-header {
+      padding: 1.35rem 1.5rem;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.88);
+      border: 1px solid rgba(0,0,0,0.06);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+      margin-bottom: 1.5rem;
+    }
+
+    .kicker {
+      margin: 0 0 0.6rem;
+      font-size: 0.92rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: rgba(45, 36, 27, 0.65);
+      font-weight: 750;
+    }
+
+    h1 {
+      font-family: "Literata", Georgia, serif;
+      font-size: clamp(2.05rem, 3.3vw, 2.7rem);
+      margin: 0 0 0.35rem;
+      color: #2d241b;
+      line-height: 1.15;
+    }
+
+    .subtitle {
+      margin: 0.2rem 0 0.85rem;
+      font-size: 1.06rem;
+      line-height: 1.6;
+      color: rgba(45,36,27,0.78);
+      max-width: 72ch;
+    }
+
+    .back {
+      text-decoration: none;
+      font-weight: 750;
+      color: rgba(45,36,27,0.92);
+      border-bottom: 1px solid rgba(0,0,0,0.25);
+      padding-bottom: 2px;
+    }
+    .back:hover { border-bottom-color: rgba(0,0,0,0.45); }
+
+    /* ONE continuous essay body box */
+    .essay-body {
+      background: rgba(255,255,255,0.86);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 22px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+      padding: clamp(1.25rem, 2.8vw, 2rem);
+    }
+
+    .essay-body h2 {
+      font-family: "Literata", Georgia, serif;
+      font-size: 1.45rem;
+      margin: 1.6rem 0 0.65rem;
+      color: #2d241b;
+      line-height: 1.25;
+    }
+
+    .essay-body h2:first-child {
+      margin-top: 0;
+    }
+
+    .essay-body h3 {
+      font-family: "Literata", Georgia, serif;
+      font-size: 1.12rem;
+      margin: 1.15rem 0 0.5rem;
+      color: rgba(45,36,27,0.92);
+      line-height: 1.25;
+    }
+
+    .essay-body p {
+      margin: 0 0 0.95rem;
+      line-height: 1.85;
+      color: rgba(45,36,27,0.82);
+      font-size: 1.03rem;
+      max-width: 80ch;
+    }
+
+    .essay-body ul {
+      margin: 0.4rem 0 1rem;
+      padding-left: 1.15rem;
+      display: grid;
+      gap: 0.55rem;
+      color: rgba(45,36,27,0.82);
+      line-height: 1.75;
+      font-size: 1.03rem;
+      max-width: 80ch;
+    }
+
+    .essay-footer {
+      margin-top: 1.25rem;
+    }
+  </style>
+</BaseLayout>
+
+===== PUBLIC SCRIPTS =====
+----- public/scripts/theme-toggle.js -----
+(function () {
+  const root = document.documentElement;
+
+  function apply(theme) {
+    root.setAttribute("data-theme", theme);
+  }
+
+  // initial theme: stored > system > light
+  const stored = localStorage.getItem("theme");
+  if (stored === "light" || stored === "dark") {
+    apply(stored);
+  } else {
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    apply(prefersDark ? "dark" : "light");
+  }
+
+  // expose toggle globally
+  window.toggleTheme = function () {
+    const current = root.getAttribute("data-theme") || "light";
+    const next = current === "dark" ? "light" : "dark";
+    apply(next);
+    localStorage.setItem("theme", next);
+  };
+})();
+
+===== PUBLIC ASSETS (names only) =====
+public/favicon.svg
+public/contours/topo-tall.svg
+public/contours/contours-soft.svg
+public/scripts/theme-toggle.js
+public/CNAME
+
+===== END =====

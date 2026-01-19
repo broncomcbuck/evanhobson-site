@@ -1,35 +1,272 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import RootAnimation from "../components/RootAnimation.astro";
 ---
 
-<BaseLayout title="Evan Hobson — Ecological Modeling">
-  <h1 class="font-serif text-4xl mb-2">Evan Hobson</h1>
-  <p class="text-xl text-text-secondary mb-12">
-    Ecological modeling · wildlife movement · computational analysis
-  </p>
+<BaseLayout
+  title="Evan Hobson — Ecological Modeling"
+  description="Ecological modeling, movement ecology, and computational analysis by Evan Hobson."
+>
+  <div class="home">
+    <!-- HERO: Quick bio only -->
+    <section class="hero">
+      <div class="hero-inner">
+        <div class="hero-grid">
+          <div class="photo">
+            <img src="/images/evan.jpg" alt="Evan Hobson" loading="eager" />
+          </div>
 
-  <section class="space-y-4">
-    <a href="/about" class="block p-4 bg-surface border border-border rounded-soft shadow-sm hover:bg-accent-secondary/10 transition">
-      <h2 class="font-serif text-2xl text-text-primary">About</h2>
-      <p class="text-text-secondary text-sm">Background & philosophy</p>
-    </a>
+          <div class="bio">
+            <p class="kicker">Ecological modeling • movement ecology • computation</p>
+            <h1>Evan Hobson</h1>
+            <p class="lead">
+              I build quantitative tools to understand how animals move through real landscapes —
+              and how management decisions shape outcomes.
+            </p>
 
-    <a href="/research" class="block p-4 bg-surface border border-border rounded-soft shadow-sm hover:bg-accent-secondary/10 transition">
-      <h2 class="font-serif text-2xl text-text-primary">Research</h2>
-      <p class="text-text-secondary text-sm">Models, findings, methods</p>
-    </a>
+            <div class="bio-links">
+              <a class="textlink" href="/about">About</a>
+              <span class="sep">•</span>
+              <a class="textlink" href="/cv">CV</a>
+              <span class="sep">•</span>
+              <a class="textlink" href="/research">Research</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-    <a href="/writing" class="block p-4 bg-surface border border-border rounded-soft shadow-sm hover:bg-accent-secondary/10 transition">
-      <h2 class="font-serif text-2xl text-text-primary">Writing</h2>
-      <p class="text-text-secondary text-sm">Essays, notes, reflections</p>
-    </a>
+    <!-- START: fully separate navigation panel -->
+    <section class="start" aria-label="Site sections">
+      <div class="start-inner">
+        <div class="start-head">
+          <h2>Start here</h2>
+          <p>
+            Choose a section. Each is intentionally scoped: <strong>Research</strong> is formal work,
+            <strong>Projects</strong> are exploratory but rigorous, and <strong>Writing</strong> is
+            formal essays.
+          </p>
+        </div>
 
-    <a href="/cv" class="block p-4 bg-surface border border-border rounded-soft shadow-sm hover:bg-accent-secondary/10 transition">
-      <h2 class="font-serif text-2xl text-text-primary">CV & Contact</h2>
-      <p class="text-text-secondary text-sm">Résumé, email, links</p>
-    </a>
-  </section>
+        <div class="start-grid">
+          <a class="card" href="/research">
+            <div class="card-top">
+              <h3>Research</h3>
+              <span class="tag">Advisor-grade</span>
+            </div>
+            <p>
+              Movement ecology and spatial modeling—questions, methods, datasets, and results.
+            </p>
+            <span class="go">Explore Research →</span>
+          </a>
 
-  <RootAnimation />
+          <a class="card" href="/projects">
+            <div class="card-top">
+              <h3>Projects</h3>
+              <span class="tag">Exploratory</span>
+            </div>
+            <p>
+              Rigorous side investigations—computational work, experiments, and long-running builds.
+            </p>
+            <span class="go">Browse Projects →</span>
+          </a>
+
+          <a class="card" href="/writing">
+            <div class="card-top">
+              <h3>Writing</h3>
+              <span class="tag">Essays</span>
+            </div>
+            <p>
+              Formal essays and extended analyses written to be read carefully rather than quickly.
+            </p>
+            <span class="go">Read Writing →</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <style>
+    .home {
+      padding: clamp(2.25rem, 4vw, 3.5rem) 0 clamp(2.5rem, 5vw, 4rem);
+    }
+
+    /* HERO */
+    .hero {
+      width: min(1100px, calc(100% - 3rem));
+      margin: 0 auto;
+    }
+
+    .hero-inner {
+      padding: clamp(1.6rem, 3vw, 2.5rem);
+      border-radius: var(--r-xl);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .photo img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: var(--r-lg);
+      border: 1px solid var(--border);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.18);
+    }
+
+    .kicker {
+      margin: 0 0 0.55rem;
+      font-size: 0.88rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 750;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(2.1rem, 3.3vw, 2.8rem);
+      margin: 0 0 0.55rem;
+      color: var(--text);
+      line-height: 1.12;
+    }
+
+    .lead {
+      margin: 0 0 1rem;
+      max-width: 70ch;
+      font-size: 1.08rem;
+      line-height: 1.75;
+      color: var(--text-2);
+    }
+
+    .bio-links {
+      display: flex;
+      gap: 0.7rem;
+      align-items: center;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    .textlink {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid color-mix(in oklab, var(--muted) 55%, transparent);
+      padding-bottom: 2px;
+    }
+
+    .textlink:hover {
+      color: var(--text);
+      border-bottom-color: color-mix(in oklab, var(--text) 45%, transparent);
+    }
+
+    .sep { opacity: 0.6; }
+
+    /* START SECTION (separate, crisp) */
+    .start {
+      width: min(1100px, calc(100% - 3rem));
+      margin: 1.1rem auto 0;
+    }
+
+    .start-inner {
+      padding: clamp(1.35rem, 2.8vw, 2.1rem);
+      border-radius: var(--r-xl);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .start-head h2 {
+      font-family: var(--font-serif);
+      margin: 0 0 0.35rem;
+      color: var(--text);
+      font-size: 1.55rem;
+      line-height: 1.2;
+    }
+
+    .start-head p {
+      margin: 0 0 1.1rem;
+      color: var(--text-2);
+      line-height: 1.7;
+      max-width: 85ch;
+    }
+
+    .start-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.9rem;
+    }
+
+    .card {
+      display: grid;
+      gap: 0.55rem;
+      padding: 1.05rem 1.1rem;
+      border-radius: var(--r-lg);
+      text-decoration: none;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      transition: transform 0.14s ease, border-color 0.14s ease, background 0.14s ease;
+      height: 100%;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: color-mix(in oklab, var(--accent) 40%, var(--border));
+      background: color-mix(in oklab, var(--surface-2) 85%, var(--accent));
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.8rem;
+    }
+
+    .card h3 {
+      margin: 0;
+      font-size: 1.15rem;
+      color: var(--text);
+      font-weight: 850;
+      letter-spacing: -0.01em;
+    }
+
+    .tag {
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 0.28rem 0.5rem;
+      border-radius: 999px;
+      background: color-mix(in oklab, var(--surface) 85%, transparent);
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--text-2);
+      line-height: 1.65;
+    }
+
+    .go {
+      margin-top: 0.2rem;
+      font-weight: 800;
+      color: var(--text);
+      border-bottom: 1px solid color-mix(in oklab, var(--text) 30%, transparent);
+      width: fit-content;
+      padding-bottom: 2px;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .photo { max-width: 340px; margin: 0 auto; }
+      .start-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </BaseLayout>

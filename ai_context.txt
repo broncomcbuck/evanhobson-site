@@ -1,0 +1,914 @@
+## EvanHobson Site — AI Context Dump
+Generated: 2026-01-10T15:56:08-07:00
+Repo root: /home/evan/evanhobson-site
+
+===== SYSTEM INFO =====
+node: v25.2.1
+npm:  11.7.0
+
+===== GIT STATUS =====
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   astro.config.mjs
+	deleted:    src/components/RootAnimation.astro
+	modified:   src/layouts/BaseLayout.astro
+	modified:   src/pages/index.astro
+	modified:   src/styles/global.css
+	modified:   tailwind.config.js
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	ai_context.txt
+	public/contours/
+	public/images/
+	site-core.txt
+	src/components/NavBar.astro
+	src/components/ScrollDots.astro
+	src/layouts/SnapLayout.astro
+	src/pages/work.astro
+	tree.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+===== DIRECTORY TREE (src + public) =====
+src
+├── assets
+│   └── contours
+├── components
+│   ├── NavBar.astro
+│   ├── ScrollDots.astro
+│   └── visual
+├── layouts
+│   ├── BaseLayout.astro
+│   └── SnapLayout.astro
+├── lib
+├── pages
+│   ├── about.astro
+│   ├── cv.astro
+│   ├── index.astro
+│   ├── research.astro
+│   ├── work.astro
+│   └── writing.astro
+└── styles
+    └── global.css
+public
+├── CNAME
+├── contours
+│   ├── contours-soft.svg
+│   └── topo-tall.svg
+├── favicon.svg
+├── images
+│   └── evan.jpg
+└── lib
+
+13 directories, 16 files
+
+===== PACKAGE + BUILD CONFIGS =====
+----- package.json -----
+{
+  "name": "",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/tailwind": "^6.0.2",
+    "@tailwindcss/vite": "^4.1.17",
+    "astro": "^5.16.4",
+    "tailwindcss": "^3.4.1"
+  }
+}
+
+----- astro.config.mjs -----
+import { defineConfig } from "astro/config";
+import tailwind from "@astrojs/tailwind";
+
+export default defineConfig({
+  integrations: [tailwind()],
+  vite: {
+    esbuild: {
+      charset: "utf8",
+    },
+  },
+});
+
+----- tailwind.config.js -----
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: ["./src/**/*.{astro,html,js,ts,jsx,tsx,vue,svelte}"],
+  theme: {
+    extend: {
+      colors: {
+        sage: "#6F8F72",
+        tan: "#F8F7F4",
+        dark: "#2E2D2B",
+        sand: "#F3EBDD",
+        clay: "#C7A27D",
+        mesa: "#A36D3A",
+        bark: "#3B2F2F",
+      },
+      fontFamily: {
+        sans: ["Inter", "system-ui", "sans-serif"],
+        serif: ["Literata", "Georgia", "serif"],
+      },
+    },
+  },
+  plugins: [],
+};
+
+----- tsconfig.json -----
+{
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["dist"]
+}
+
+===== GLOBAL STYLES =====
+----- src/styles/global.css -----
+/* ======================================================= */
+/* GLOBAL BASE STYLES                                      */
+/* ======================================================= */
+
+:root {
+  --nav-h: 54px;
+
+  /* “paper” palette */
+  --paper-0: #f8f7f4;
+  --paper-1: #f1ede6;
+  --paper-2: #e9e2d7;
+
+  --ink: #2a1b0f;
+  --muted: #4a4036;
+
+  --card: rgba(255, 255, 255, 0.92);
+  --card-border: rgba(0, 0, 0, 0.06);
+  --shadow: 0 20px 45px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--ink);
+
+  /* ✅ Professional “paper” background (not plain white) */
+  background:
+    radial-gradient(1200px 700px at 20% 10%, rgba(163, 109, 58, 0.08), transparent 60%),
+    radial-gradient(900px 600px at 80% 30%, rgba(111, 143, 114, 0.08), transparent 55%),
+    linear-gradient(to bottom, var(--paper-2) 0%, var(--paper-1) 40%, var(--paper-0) 100%);
+
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* ✅ fixes “content under navbar” everywhere */
+  padding-top: var(--nav-h);
+}
+
+/* Box sizing sanity */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Media defaults */
+img,
+svg {
+  max-width: 100%;
+  display: block;
+}
+
+/* Code / ASCII safety */
+pre {
+  white-space: pre;
+  font-family: monospace;
+  margin: 0;
+}
+
+/* Generic container */
+.container {
+  width: min(1100px, calc(100% - 3rem));
+  margin-inline: auto;
+}
+
+/* ======================================================= */
+/* Progressive enhancement for SnapLayout animations       */
+/* - Without JS: content is visible                        */
+/* - With JS: we fade/slide in via .visible toggles        */
+/* ======================================================= */
+
+html.js .content {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.65s ease, transform 0.8s ease;
+}
+
+html.js .content.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+===== LAYOUTS =====
+----- src/layouts/BaseLayout.astro -----
+---
+import "../styles/global.css";
+import NavBar from "../components/NavBar.astro";
+
+const {
+  title = "Evan Hobson — Ecological Modeling",
+  description = "Ecological modeling, wildlife movement, and computational analysis by Evan Hobson.",
+  canonical,
+} = Astro.props;
+
+const canonicalUrl =
+  typeof canonical === "string" && canonical.length > 0 ? canonical : undefined;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+
+    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+
+    <meta name="theme-color" content="#F8F7F4" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary" />
+
+    <slot name="head" />
+  </head>
+
+  <body>
+    <NavBar />
+
+    <main class="container">
+      <slot />
+    </main>
+  </body>
+</html>
+
+----- src/layouts/SnapLayout.astro -----
+---
+import "../styles/global.css";
+import NavBar from "../components/NavBar.astro";
+import ScrollDots from "../components/ScrollDots.astro";
+---
+
+<NavBar />
+<ScrollDots />
+
+<div class="snap-container" id="snap-root">
+  <slot />
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // turn on progressive enhancement styles
+    document.documentElement.classList.add("js");
+
+    const container = document.querySelector("#snap-root");
+    if (!container) return;
+
+    const sections = Array.from(container.querySelectorAll(".snap-section"));
+    const contents = Array.from(container.querySelectorAll(".snap-section .content"));
+
+    // Start visible if JS fails mid-way (safety)
+    contents.forEach((c) => c.classList.add("visible"));
+
+    // Now apply animated behavior (hide then reveal as we intersect)
+    // This avoids “blank page” if observer fails.
+    requestAnimationFrame(() => {
+      contents.forEach((c) => c.classList.remove("visible"));
+
+      // reveal the first section shortly after load
+      const first = sections[0]?.querySelector(".content");
+      if (first) setTimeout(() => first.classList.add("visible"), 120);
+    });
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const content = entry.target.querySelector(".content");
+          if (!content) continue;
+
+          if (entry.isIntersecting) {
+            // small delay so snap feels intentional
+            setTimeout(() => content.classList.add("visible"), 120);
+          } else {
+            content.classList.remove("visible");
+          }
+        }
+      },
+      {
+        root: container,
+        threshold: 0.58,
+      }
+    );
+
+    sections.forEach((s) => observer.observe(s));
+  });
+</script>
+
+<style>
+.snap-container {
+  /* ✅ this fixes the “extra scroll” weirdness */
+  height: calc(100vh - var(--nav-h));
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  scroll-snap-type: y mandatory;
+  scroll-padding-top: 18px; /* keeps snapped content comfy under the navbar */
+  overscroll-behavior-y: contain;
+
+  /* don’t add padding-top here (body already has it) */
+  padding: 0;
+  margin: 0;
+}
+</style>
+
+===== COMPONENTS (TOP-LEVEL) =====
+----- src/components/NavBar.astro -----
+<nav class="topnav">
+  <div class="nav-inner">
+    <a href="/">Home</a>
+    <a href="/work">Work</a>
+    <a href="/research">Research</a>
+    <a href="/writing">Writing</a>
+    <a href="/cv">CV</a>
+  </div>
+</nav>
+
+<style>
+.topnav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 54px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(10px);
+
+  z-index: 5000;
+  padding: 0 1.25rem;
+
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.nav-inner {
+  display: flex;
+  gap: 2rem;
+}
+
+.nav-inner a {
+  font-family: "Inter", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: #2a231c;
+  transition: opacity 0.25s ease, color 0.25s ease;
+  opacity: 0.8;
+}
+
+.nav-inner a:hover {
+  opacity: 1;
+  color: #4d3b2b;
+}
+</style>
+
+----- src/components/ScrollDots.astro -----
+<div class="scroll-dots" aria-label="Section navigation">
+  <button class="dot active" data-target="sky" aria-label="About (hero)"></button>
+  <button class="dot" data-target="plateau" aria-label="What I study"></button>
+  <button class="dot" data-target="plants" aria-label="Projects"></button>
+  <button class="dot" data-target="roots" aria-label="Why"></button>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const container = document.querySelector("#snap-root");
+    const sections = document.querySelectorAll(".snap-section");
+    const dots = document.querySelectorAll(".scroll-dots .dot");
+    if (!container || sections.length === 0) return;
+
+    // highlight current section dot
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const id = entry.target.id;
+
+          dots.forEach((dot) => {
+            dot.classList.toggle("active", dot.dataset.target === id);
+          });
+        }
+      },
+      { root: container, threshold: 0.6 }
+    );
+
+    sections.forEach((s) => observer.observe(s));
+
+    // click = scroll the snap container (NOT the document)
+    dots.forEach((dot) => {
+      dot.addEventListener("click", () => {
+        const targetId = dot.dataset.target;
+        const section = document.getElementById(targetId);
+        if (!section) return;
+
+        // offsetTop is relative to the nearest offset parent; for our layout this works.
+        // We scroll the container directly to avoid scrollIntoView affecting the page.
+        container.scrollTo({
+          top: section.offsetTop,
+          behavior: "smooth",
+        });
+      });
+    });
+  });
+</script>
+
+<style>
+.scroll-dots {
+  position: fixed;
+  right: 1.5rem;
+  top: calc(var(--nav-h) + 50%);
+  transform: translateY(-50%);
+  z-index: 2000;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+
+  border: 2px solid rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+
+  transition: background 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+
+.dot.active {
+  background: #5d3c28;
+  border-color: #5d3c28;
+  transform: scale(1.3);
+}
+</style>
+
+===== COMPONENTS (visual/) =====
+===== PAGES (key ones) =====
+----- src/pages/index.astro -----
+---
+import SnapLayout from "../layouts/SnapLayout.astro";
+---
+
+<SnapLayout>
+  <!-- HERO / SECTION 1 -->
+  <section id="sky" class="snap-section home-hero">
+    <div class="content hero-card">
+      <div class="hero-grid">
+        <div class="hero-photo">
+          <img
+            src="/images/evan.jpg"
+            alt="Evan Hobson in the field"
+            loading="eager"
+          />
+        </div>
+
+        <div class="hero-copy">
+          <h1>Evan Hobson</h1>
+          <p class="subtitle">
+            Ecological modeling &mdash; movement, landscapes, and computation.
+          </p>
+
+          <p class="lead">
+            I’m an undergraduate researcher working on movement ecology and spatial
+            modeling. I build quantitative tools to understand how animals use
+            real landscapes &mdash; and how management decisions change outcomes.
+          </p>
+
+          <ul class="quick">
+            <li><strong>Focus:</strong> movement ecology, mechanistic modeling</li>
+            <li><strong>Methods:</strong> spatial analysis, simulation, stats</li>
+            <li><strong>Currently:</strong> cattle + feral horse GPS projects</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2 -->
+  <section id="plateau" class="snap-section">
+    <div class="content">
+      <h2>What I Study</h2>
+      <p>
+        I explore movement ecology, spatial modeling, and mechanistic frameworks
+        &mdash; from agent-based simulation to landscape analysis.
+      </p>
+    </div>
+  </section>
+
+  <!-- SECTION 3 -->
+  <section id="plants" class="snap-section">
+    <div class="content">
+      <h2>Research Projects</h2>
+      <p>
+        My current work includes mapping wild horse home ranges, analyzing cattle
+        movement in invaded rangelands, and experimenting with mechanistic models
+        informed by control theory.
+      </p>
+    </div>
+  </section>
+
+  <!-- SECTION 4 -->
+  <section id="roots" class="snap-section">
+    <div class="content">
+      <h2>Why I Do This</h2>
+      <p>
+        I’m motivated by curiosity, by the mathematical structure of ecosystems,
+        and by a desire to contribute to thoughtful stewardship of the natural world.
+      </p>
+    </div>
+  </section>
+</SnapLayout>
+
+<style>
+/* Full-screen snapping sections */
+.snap-section {
+  height: calc(100vh - var(--nav-h));
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+
+  display: grid;
+  place-items: center;
+
+  position: relative;
+  z-index: 1;
+
+  padding: 7vh 1.25rem;
+}
+
+/* Content cards */
+.content {
+  width: min(980px, 92vw);
+  padding: clamp(2.2rem, 3.8vw, 4.2rem) clamp(1.6rem, 3vw, 3rem);
+  text-align: center;
+
+  background: var(--card);
+  backdrop-filter: blur(8px);
+  border-radius: 22px;
+  border: 1px solid var(--card-border);
+
+  box-shadow: var(--shadow);
+}
+
+/* Typography */
+.content h2 {
+  font-family: "Literata", Georgia, serif;
+  font-size: clamp(2.0rem, 2.8vw, 2.6rem);
+  font-weight: 650;
+  margin: 0 0 1.1rem;
+  color: #2d241b;
+}
+
+.content p {
+  font-size: clamp(1.05rem, 1.35vw, 1.2rem);
+  line-height: 1.8;
+  max-width: 760px;
+  margin: 0 auto;
+  color: var(--muted);
+}
+
+/* HERO */
+.hero-card {
+  text-align: left;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 1.75rem;
+  align-items: center;
+}
+
+.hero-photo img {
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 18px;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.14);
+}
+
+.hero-copy h1 {
+  font-family: "Literata", Georgia, serif;
+  font-size: clamp(2.1rem, 3.2vw, 3rem);
+  margin: 0 0 0.35rem;
+  color: #2d241b;
+}
+
+.subtitle {
+  margin: 0 0 0.95rem;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  color: rgba(45, 36, 27, 0.75);
+}
+
+.lead {
+  margin: 0 0 1.1rem;
+  max-width: 60ch;
+}
+
+.quick {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.quick li {
+  font-size: 0.98rem;
+  color: rgba(45, 36, 27, 0.82);
+}
+
+@media (max-width: 720px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .hero-card {
+    text-align: center;
+  }
+  .hero-photo img {
+    margin: 0 auto;
+  }
+}
+</style>
+
+----- src/pages/work.astro -----
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Work — Evan Hobson">
+
+  <main class="work-page">
+
+    <!-- ========================= -->
+    <!-- RESEARCH SECTION          -->
+    <!-- ========================= -->
+    <section class="work-section">
+      <h1>Research</h1>
+      <p class="section-intro">
+        Supervised and publication-oriented research focused on ecological
+        modeling, movement dynamics, and quantitative analysis.
+      </p>
+
+      <div class="card-grid">
+
+        <article class="work-card">
+          <h2>Cattle Movement & Habitat Selection</h2>
+          <p class="work-meta">
+            Mechanistic RSF / SSF · Rangeland ecology · Idaho
+          </p>
+          <p>
+            Analysis of GPS-collared cattle to understand how grazing behavior
+            responds to vegetation structure, terrain, and management practices.
+            Emphasis on mechanistic and spatially explicit modeling approaches.
+          </p>
+        </article>
+
+        <article class="work-card">
+          <h2>Feral Horse Movement Dynamics</h2>
+          <p class="work-meta">
+            Movement ecology · Behavioral inference · Nevada
+          </p>
+          <p>
+            Investigation of feral horse space use and movement patterns across
+            heterogeneous landscapes, using trajectory analysis and time-series
+            methods to infer behavioral structure.
+          </p>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ========================= -->
+    <!-- PROJECTS & EXPLORATIONS   -->
+    <!-- ========================= -->
+    <section class="work-section">
+      <h1>Projects & Explorations</h1>
+      <p class="section-intro">
+        Independent technical work, long-term explorations, and computational
+        experiments that inform and support my research thinking.
+      </p>
+
+      <div class="card-grid">
+
+        <article class="work-card secondary">
+          <h2>Game of Life Ash Distributions</h2>
+          <p class="work-meta">
+            Cellular automata · Simulation · Pattern analysis
+          </p>
+          <p>
+            Systematic exploration of stable end-state (“ash”) distributions in
+            Conway’s Game of Life, combining large-scale simulation, batch
+            experimentation, and statistical characterization.
+          </p>
+        </article>
+
+        <article class="work-card secondary">
+          <h2>HPC & Modeling Toolchains</h2>
+          <p class="work-meta">
+            Julia · C++ · R · Reproducible workflows
+          </p>
+          <p>
+            Ongoing experimentation with high-performance computing workflows
+            for simulation-heavy ecological models, with an emphasis on
+            reproducibility and scaling.
+          </p>
+        </article>
+
+      </div>
+    </section>
+
+  </main>
+
+</BaseLayout>
+
+<style>
+/* ======================================================= */
+/* WORK PAGE LAYOUT                                        */
+/* ======================================================= */
+
+.work-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem 6rem;
+}
+
+/* ======================================================= */
+/* SECTION HEADERS                                         */
+/* ======================================================= */
+
+.work-section {
+  margin-bottom: 5rem;
+}
+
+.work-section h1 {
+  font-family: "Literata", serif;
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
+  color: #2d251a;
+}
+
+.section-intro {
+  max-width: 720px;
+  margin-bottom: 2.5rem;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: #4a4036;
+}
+
+/* ======================================================= */
+/* CARD GRID                                              */
+/* ======================================================= */
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.75rem;
+}
+
+/* ======================================================= */
+/* CARDS                                                  */
+/* ======================================================= */
+
+.work-card {
+  background: #fdfcf9;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  padding: 1.6rem 1.6rem 1.8rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+}
+
+.work-card.secondary {
+  background: #fbfaf7;
+}
+
+.work-card h2 {
+  font-family: "Literata", serif;
+  font-size: 1.35rem;
+  margin-bottom: 0.4rem;
+  color: #2d251a;
+}
+
+.work-meta {
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #7a6a58;
+  margin-bottom: 0.8rem;
+}
+
+.work-card p {
+  font-size: 1rem;
+  line-height: 1.65;
+  color: #3f362e;
+}
+</style>
+
+----- src/pages/research.astro -----
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Research – Evan Hobson">
+  <h1 class="font-serif text-3xl mb-4">Research</h1>
+  <p class="text-text-secondary">
+    This is the Research page. Summarize studies, methods, and findings here.
+  </p>
+</BaseLayout>
+
+----- src/pages/writing.astro -----
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Writing – Evan Hobson">
+  <h1 class="font-serif text-3xl mb-4">Writing</h1>
+  <p class="text-text-secondary">
+    This is the Writing page. You can publish essays, notes, or reflections here.
+  </p>
+</BaseLayout>
+
+----- src/pages/about.astro -----
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="About – Evan Hobson">
+  <h1 class="font-serif text-3xl mb-4">About</h1>
+  <p class="text-text-secondary">
+    This is the About page. Write about your background, interests, and philosophy here.
+  </p>
+</BaseLayout>
+
+----- src/pages/cv.astro -----
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="CV & Contact – Evan Hobson">
+  <h1 class="font-serif text-3xl mb-4">CV & Contact</h1>
+  <p class="text-text-secondary">
+    Add your CV or résumé content here. Include a downloadable PDF and contact links.
+  </p>
+</BaseLayout>
+
+===== PUBLIC ASSETS LIST (no binaries dumped) =====
+public/favicon.svg
+public/contours/topo-tall.svg
+public/contours/contours-soft.svg
+public/CNAME
+
+Public images present (names only):
+public/images/evan.jpg
+
+===== DEV SERVER NOTES =====
+Run locally:
+  npm install
+  npm run dev
+Default URL: http://localhost:4321
+

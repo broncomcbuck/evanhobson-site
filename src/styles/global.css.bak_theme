@@ -168,7 +168,10 @@ html, body {
   background-image: none !important;
 }
 
-
+/* ===== THEME TOKENS (light + dark) =====
+   - Crisp contrast, less “soft”
+   - Universal dark mode using prefers-color-scheme
+*/
 
 :root {
   /* typography */
@@ -239,7 +242,7 @@ body {
   background-image: none !important;
 }
 
-
+/* ===== THEME TOKENS (manual toggle) ===== */
 
 :root {
   --font-serif: "Literata", Georgia, serif;
@@ -282,128 +285,4 @@ a { color: inherit; }
 
 ::selection {
   background: color-mix(in oklab, var(--accent) 35%, transparent);
-}
-
-/* ===== THEME TOKENS (manual toggle, high contrast) ===== */
-
-/* LIGHT MODE */
-[data-theme="light"] {
-  --bg: #f5f7fa;            /* neutral light gray */
-  --surface: #ffffff;      /* cards / panels */
-  --surface-2: #f0f2f5;    /* subtle contrast */
-  --text: #0f172a;         /* near-black */
-  --text-2: #334155;       /* slate */
-  --muted: #64748b;        /* cool gray */
-  --border: rgba(15,23,42,0.12);
-
-  /* accent: restrained sage/steel */
-  --accent: #4f766a;
-
-  --shadow: 0 12px 28px rgba(15,23,42,0.12);
-}
-
-/* DARK MODE */
-[data-theme="dark"] {
-  --bg: #0b0f14;            /* deep ink */
-  --surface: #121821;      /* panels */
-  --surface-2: #18202c;    /* hover / alt */
-  --text: #e5e7eb;         /* near-white */
-  --text-2: #cbd5e1;       /* light slate */
-  --muted: #94a3b8;
-  --border: rgba(226,232,240,0.14);
-
-  --accent: #7fb3a3;       /* brighter in dark */
-
-  --shadow: 0 18px 42px rgba(0,0,0,0.55);
-}
-
-/* GLOBAL APPLICATION */
-html, body {
-  background: var(--bg);
-  color: var(--text);
-}
-
-p, li {
-  color: var(--text-2);
-}
-
-a {
-  color: inherit;
-}
-
-/* headings should snap */
-h1, h2, h3, h4 {
-  color: var(--text);
-}
-
-/* selection */
-::selection {
-  background: color-mix(in oklab, var(--accent) 35%, transparent);
-}
-
-/* ===== DARK MODE OVERRIDES (cards, pages) =====
-   These override earlier “light-only” blocks that used hard-coded rgba/hex colors.
-   Keep this near the end of global.css so it wins the cascade.
-*/
-
-.page h1,
-.item h2,
-.item h3,
-.start-head h2 {
-  color: var(--text) !important;
-}
-
-.page .intro,
-.item p,
-.start-head p {
-  color: var(--text-2) !important;
-}
-
-.item .meta,
-.kicker,
-.tag {
-  color: var(--muted) !important;
-}
-
-/* Unify all cards/boxes */
-.item,
-.hero-inner,
-.start-inner,
-.card,
-.essay-header,
-.essay-body,
-.essay-block,
-.essay-toc {
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  box-shadow: var(--shadow) !important;
-}
-
-/* Secondary surfaces used by some cards */
-.card {
-  background: var(--surface-2) !important;
-}
-
-/* Links inside cards */
-.item a,
-.textlink,
-.go,
-.back,
-.essay-link {
-  color: var(--text) !important;
-  border-bottom-color: color-mix(in oklab, var(--text) 28%, transparent) !important;
-}
-
-.item a:hover,
-.textlink:hover,
-.go:hover,
-.back:hover,
-.essay-link:hover {
-  border-bottom-color: color-mix(in oklab, var(--accent) 55%, transparent) !important;
-}
-
-/* Ensure body/page background always follows theme */
-html, body {
-  background: var(--bg) !important;
-  color: var(--text) !important;
 }

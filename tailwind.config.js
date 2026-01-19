@@ -1,29 +1,22 @@
-export default {
-  content: [
-    './src/**/*.{astro,html,js,jsx,ts,tsx,vue,svelte}',
-  ],
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: ["./src/**/*.{astro,html,js,ts,jsx,tsx,vue,svelte}"],
   theme: {
     extend: {
       colors: {
-        background: '#F8F7F4',
-        surface: '#FFFFFF',
-        text: {
-          primary: '#1F1F1D',
-          secondary: '#575652',
-        },
-        accent: {
-          primary: '#6F8F72',
-          secondary: '#C8A58C',
-        },
-        border: '#EAE7E1',
+        sage: "#6F8F72",
+        tan: "#F8F7F4",
+        dark: "#2E2D2B",
+        sand: "#F3EBDD",
+        clay: "#C7A27D",
+        mesa: "#A36D3A",
+        bark: "#3B2F2F",
       },
       fontFamily: {
-        serif: ['Literata', 'serif'],
-        sans: ['Inter', 'sans-serif'],
-      },
-      borderRadius: {
-        soft: '8px',
+        sans: ["Inter", "system-ui", "sans-serif"],
+        serif: ["Literata", "Georgia", "serif"],
       },
     },
   },
+  plugins: [],
 };

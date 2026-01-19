@@ -1,0 +1,171 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Work — Evan Hobson">
+
+  <main class="work-page">
+
+    <!-- ========================= -->
+    <!-- RESEARCH SECTION          -->
+    <!-- ========================= -->
+    <section class="work-section">
+      <h1>Research</h1>
+      <p class="section-intro">
+        Supervised and publication-oriented research focused on ecological
+        modeling, movement dynamics, and quantitative analysis.
+      </p>
+
+      <div class="card-grid">
+
+        <article class="work-card">
+          <h2>Cattle Movement & Habitat Selection</h2>
+          <p class="work-meta">
+            Mechanistic RSF / SSF · Rangeland ecology · Idaho
+          </p>
+          <p>
+            Analysis of GPS-collared cattle to understand how grazing behavior
+            responds to vegetation structure, terrain, and management practices.
+            Emphasis on mechanistic and spatially explicit modeling approaches.
+          </p>
+        </article>
+
+        <article class="work-card">
+          <h2>Feral Horse Movement Dynamics</h2>
+          <p class="work-meta">
+            Movement ecology · Behavioral inference · Nevada
+          </p>
+          <p>
+            Investigation of feral horse space use and movement patterns across
+            heterogeneous landscapes, using trajectory analysis and time-series
+            methods to infer behavioral structure.
+          </p>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ========================= -->
+    <!-- PROJECTS & EXPLORATIONS   -->
+    <!-- ========================= -->
+    <section class="work-section">
+      <h1>Projects & Explorations</h1>
+      <p class="section-intro">
+        Independent technical work, long-term explorations, and computational
+        experiments that inform and support my research thinking.
+      </p>
+
+      <div class="card-grid">
+
+        <article class="work-card secondary">
+          <h2>Game of Life Ash Distributions</h2>
+          <p class="work-meta">
+            Cellular automata · Simulation · Pattern analysis
+          </p>
+          <p>
+            Systematic exploration of stable end-state (“ash”) distributions in
+            Conway’s Game of Life, combining large-scale simulation, batch
+            experimentation, and statistical characterization.
+          </p>
+        </article>
+
+        <article class="work-card secondary">
+          <h2>HPC & Modeling Toolchains</h2>
+          <p class="work-meta">
+            Julia · C++ · R · Reproducible workflows
+          </p>
+          <p>
+            Ongoing experimentation with high-performance computing workflows
+            for simulation-heavy ecological models, with an emphasis on
+            reproducibility and scaling.
+          </p>
+        </article>
+
+      </div>
+    </section>
+
+  </main>
+
+</BaseLayout>
+
+<style>
+/* ======================================================= */
+/* WORK PAGE LAYOUT                                        */
+/* ======================================================= */
+
+.work-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem 6rem;
+}
+
+/* ======================================================= */
+/* SECTION HEADERS                                         */
+/* ======================================================= */
+
+.work-section {
+  margin-bottom: 5rem;
+}
+
+.work-section h1 {
+  font-family: "Literata", serif;
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
+  color: #2d251a;
+}
+
+.section-intro {
+  max-width: 720px;
+  margin-bottom: 2.5rem;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: #4a4036;
+}
+
+/* ======================================================= */
+/* CARD GRID                                              */
+/* ======================================================= */
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.75rem;
+}
+
+/* ======================================================= */
+/* CARDS                                                  */
+/* ======================================================= */
+
+.work-card {
+  background: #fdfcf9;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  padding: 1.6rem 1.6rem 1.8rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+}
+
+.work-card.secondary {
+  background: #fbfaf7;
+}
+
+.work-card h2 {
+  font-family: "Literata", serif;
+  font-size: 1.35rem;
+  margin-bottom: 0.4rem;
+  color: #2d251a;
+}
+
+.work-meta {
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #7a6a58;
+  margin-bottom: 0.8rem;
+}
+
+.work-card p {
+  font-size: 1rem;
+  line-height: 1.65;
+  color: #3f362e;
+}
+</style>

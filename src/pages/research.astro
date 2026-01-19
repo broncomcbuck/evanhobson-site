@@ -1,10 +1,38 @@
+
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
-<BaseLayout title="Research – Evan Hobson">
-  <h1 class="font-serif text-3xl mb-4">Research</h1>
-  <p class="text-text-secondary">
-    This is the Research page. Summarize studies, methods, and findings here.
-  </p>
+<BaseLayout title="Research — Evan Hobson">
+  <section class="page">
+    <h1>Research</h1>
+
+    <p class="intro">
+      My research focuses on movement ecology and spatial modeling, with an emphasis on
+      mechanistic and data-driven approaches grounded in field observations.
+    </p>
+
+    <div class="list">
+      <article class="item">
+        <h2>Cattle movement and landscape use</h2>
+        <p>
+          Analysis of GPS-collared cattle to quantify habitat selection, movement behavior,
+          and responses to heterogeneous rangeland environments.
+        </p>
+        <p class="meta">Status: ongoing</p>
+        <a href="/research/cattle">View project →</a>
+      </article>
+
+      <article class="item">
+        <h2>Feral horse movement ecology</h2>
+        <p>
+          Movement analysis of feral horses examining space use, home range structure,
+          and landscape drivers across arid systems.
+        </p>
+        <p class="meta">Status: ongoing</p>
+        <a href="/research/horses">View project →</a>
+      </article>
+    </div>
+  </section>
 </BaseLayout>
+

@@ -1,0 +1,14 @@
+<style>
+  .c {
+    fill: none;
+    stroke: #6b5e52;
+    stroke-width: 0.8;
+    opacity: 0.18;
+  }
+  .index {
+    fill: none;
+    stroke: #5a4c3e;
+    stroke-width: 1.6;
+    opacity: 0.35;
+  }
+</style>

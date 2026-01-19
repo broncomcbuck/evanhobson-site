@@ -1,0 +1,83 @@
+---
+const currentPath = Astro.url.pathname;
+const isActive = (href) => {
+  if (href === "/") return currentPath === "/";
+  return currentPath.startsWith(href);
+};
+---
+
+<nav class="topnav">
+  <div class="nav-inner">
+    <div class="links">
+      <a class={isActive("/") ? "active" : ""} href="/">Home</a>
+      <a class={isActive("/about") ? "active" : ""} href="/about">About</a>
+      <a class={isActive("/research") ? "active" : ""} href="/research">Research</a>
+      <a class={isActive("/projects") ? "active" : ""} href="/projects">Projects</a>
+      <a class={isActive("/writing") ? "active" : ""} href="/writing">Writing</a>
+      <a class={isActive("/cv") ? "active" : ""} href="/cv">CV</a>
+    </div>
+
+    <button
+      class="theme-toggle"
+      aria-label="Toggle light/dark mode"
+      onclick="toggleTheme()"
+      title="Toggle light/dark mode"
+    >
+      ◐
+    </button>
+  </div>
+</nav>
+
+<style>
+.topnav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--nav-h);
+  display: flex;
+  justify-content: center;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  z-index: 5000;
+}
+
+.nav-inner {
+  width: min(1100px, calc(100% - 3rem));
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.links {
+  display: flex;
+  gap: 1.1rem;
+}
+
+.links a {
+  font-weight: 650;
+  text-decoration: none;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+}
+
+.links a.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.45rem 0.55rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  background: var(--surface-2);
+}
+</style>

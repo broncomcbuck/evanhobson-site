@@ -1,7 +1,11 @@
-import { defineConfig } from 'astro/config';
-import tailwind from '@astrojs/tailwind';
+import { defineConfig } from "astro/config";
+import tailwind from "@astrojs/tailwind";
 
 export default defineConfig({
-  site: 'https://evanhobson.com',
   integrations: [tailwind()],
+  vite: {
+    esbuild: {
+      charset: "utf8",
+    },
+  },
 });

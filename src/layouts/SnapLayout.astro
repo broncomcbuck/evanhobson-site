@@ -1,0 +1,77 @@
+---
+import "../styles/global.css";
+import NavBar from "../components/NavBar.astro";
+import ScrollDots from "../components/ScrollDots.astro";
+---
+
+<NavBar />
+<ScrollDots />
+
+<div class="snap-container" id="snap-root">
+  <slot />
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // turn on progressive enhancement styles
+    document.documentElement.classList.add("js");
+
+    const container = document.querySelector("#snap-root");
+    if (!container) return;
+
+    const sections = Array.from(container.querySelectorAll(".snap-section"));
+    const contents = Array.from(container.querySelectorAll(".snap-section .content"));
+
+    // Start visible if JS fails mid-way (safety)
+    contents.forEach((c) => c.classList.add("visible"));
+
+    // Now apply animated behavior (hide then reveal as we intersect)
+    // This avoids “blank page” if observer fails.
+    requestAnimationFrame(() => {
+      contents.forEach((c) => c.classList.remove("visible"));
+
+      // reveal the first section shortly after load
+      const first = sections[0]?.querySelector(".content");
+      if (first) setTimeout(() => first.classList.add("visible"), 120);
+    });
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const content = entry.target.querySelector(".content");
+          if (!content) continue;
+
+          if (entry.isIntersecting) {
+            // small delay so snap feels intentional
+            setTimeout(() => content.classList.add("visible"), 120);
+          } else {
+            content.classList.remove("visible");
+          }
+        }
+      },
+      {
+        root: container,
+        threshold: 0.58,
+      }
+    );
+
+    sections.forEach((s) => observer.observe(s));
+  });
+</script>
+
+<style>
+.snap-container {
+  /* ✅ this fixes the “extra scroll” weirdness */
+  height: calc(100vh - var(--nav-h));
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  scroll-snap-type: y mandatory;
+  scroll-padding-top: 18px; /* keeps snapped content comfy under the navbar */
+  overscroll-behavior-y: contain;
+
+  /* don’t add padding-top here (body already has it) */
+  padding: 0;
+  margin: 0;
+}
+</style>

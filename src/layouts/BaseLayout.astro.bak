@@ -34,7 +34,6 @@ const canonicalUrl =
     <meta name="twitter:card" content="summary" />
 
     <slot name="head" />
-    <script is:inline src="/scripts/theme-toggle.js"></script>
   </head>
 
   <body>
