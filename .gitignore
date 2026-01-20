@@ -22,3 +22,22 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# ===== Local dumps / AI context =====
+ai_context*.txt
+ai_context_dump_*.txt
+site-core.txt
+tree.txt
+
+# ===== Backup files =====
+*.bak
+*.bak_*
+*.swp
+*.swo
+
+# ===== OS junk =====
+.DS_Store
+
+# ===== Astro build / cache =====
+dist/
+.astro/
