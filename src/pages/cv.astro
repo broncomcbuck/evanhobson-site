@@ -1,10 +1,40 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+
+const title = "Curriculum Vitae — Evan Hobson";
+const description =
+  "Curriculum vitae of Evan Hobson, undergraduate researcher in quantitative ecology and conservation modeling.";
 ---
 
-<BaseLayout title="CV & Contact – Evan Hobson">
-  <h1 class="font-serif text-3xl mb-4">CV & Contact</h1>
-  <p class="text-text-secondary">
-    Add your CV or résumé content here. Include a downloadable PDF and contact links.
-  </p>
+<BaseLayout title={title} description={description}>
+  <section class="page">
+    <h1>Curriculum Vitae</h1>
+
+    <p class="intro">
+      A current copy of my CV is embedded below. A downloadable PDF version is also available.
+    </p>
+
+    <!-- Download link -->
+    <p style="margin-bottom: 1.5rem;">
+      <a
+        href="/cv/Evan_Hobson_CV.pdf"
+        target="_blank"
+        rel="noopener"
+        style="font-weight: 700; border-bottom: 1px solid currentColor;"
+      >
+        Download CV (PDF)
+      </a>
+    </p>
+
+    <!-- Embedded PDF -->
+    <article class="item">
+      <iframe
+        src="/cv/Evan_Hobson_CV.pdf"
+        width="100%"
+        height="900"
+        style="border: none; border-radius: 12px;"
+        title="Evan Hobson Curriculum Vitae"
+      ></iframe>
+    </article>
+  </section>
 </BaseLayout>
