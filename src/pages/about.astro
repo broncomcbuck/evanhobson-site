@@ -1,10 +1,75 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+
+const title = "About — Evan Hobson";
+const description =
+  "Undergraduate researcher focused on bridging ecological theory, modeling, and conservation management.";
 ---
 
-<BaseLayout title="About – Evan Hobson">
-  <h1 class="font-serif text-3xl mb-4">About</h1>
-  <p class="text-text-secondary">
-    This is the About page. Write about your background, interests, and philosophy here.
-  </p>
+<BaseLayout title={title} description={description}>
+  <section class="page">
+    <h1>About</h1>
+
+    <p class="intro">
+      I am an undergraduate researcher interested in how theoretical and quantitative ecology can be
+      meaningfully translated into practical, hands-on management decisions. My work is driven by a
+      central question:
+      <strong>
+        how can we bridge ecological theory and modeling with the realities of conservation and land
+        management in complex, dynamic systems?
+      </strong>
+    </p>
+
+    <!-- One big box using your existing .item “card” styling -->
+    <article class="item">
+      <h2>What I’m working toward</h2>
+      <p>
+        I am particularly drawn to problems where modeling structure matters—where the way we
+        formalize ecological processes has real consequences for interpretation, decision-making, and
+        outcomes on the ground. I am interested in movement ecology, spatial and mechanistic modeling,
+        and the broader statistical and computational frameworks that allow us to better represent
+        wildlife populations as dynamic systems rather than static patterns.
+      </p>
+      <p>
+        Across projects, I am motivated by questions such as how close we can reasonably get to
+        modeling the complexity of ecological systems, what simplifying assumptions are defensible,
+        and how models can remain useful for practitioners making real management decisions.
+      </p>
+
+      <h2 style="margin-top: 1.4rem;">Where I’m at</h2>
+      <p>
+        At my current stage, I view my work as preparation for graduate study and a long-term career
+        in academia. I am especially interested in
+        contributing to methodological and conceptual work that improves how ecological models are
+        built, interpreted, and applied—particularly in contexts where management objectives,
+        uncertainty, and tradeoffs are unavoidable.
+      </p>
+
+      <h2 style="margin-top: 1.4rem;">Why I care</h2>
+      <p>
+        My interest in conservation is also shaped by faith and a strong sense of stewardship. I see
+        ecological management not only as a technical challenge, but as a moral one—rooted in care,
+        responsibility, and respect for both landscapes and the people who depend on them.
+      </p>
+      <p>
+        While models and methods are essential tools, I believe effective management ultimately
+        requires an ethic grounded in humility and love, recognizing the limits of our knowledge while
+        striving to act thoughtfully and responsibly.
+      </p>
+
+      <h2 style="margin-top: 1.4rem;">Outside of research</h2>
+      <p>
+        I am married to my wife, Lily, who is an essential part of my life and a constant source of
+        support, perspective, and and strength. Together, we hold a shared
+        commitment to learning and growth.
+      </p>
+
+      <h2 style="margin-top: 1.4rem;">What I’m hoping to build</h2>
+      <p style="margin-bottom: 0;">
+        I am eager to continue developing as a researcher, to learn from advisors and collaborators
+        who think deeply about both theory and application, and to contribute work that helps connect
+        rigorous ecological modeling with meaningful conservation practice.
+      </p>
+    </article>
+  </section>
 </BaseLayout>
