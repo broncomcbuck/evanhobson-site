@@ -1,0 +1,236 @@
+---
+// Procedurally generated ASCII ridgeline, regenerated on every load/resize.
+// Single merged character grid so nearer ridges properly occlude farther
+// ones (no overlapping/garbled glyphs from independently stacked layers).
+---
+
+<div class="ascii-landscape" id="ascii-landscape" aria-hidden="true">
+  <pre class="ascii-landscape-art" id="ascii-landscape-art"></pre>
+</div>
+
+<script>
+  function rand(min: number, max: number) {
+    return Math.random() * (max - min) + min;
+  }
+
+  function pick<T>(arr: T[]): T {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  type Cell = { ch: string; layer: string } | null;
+
+  // Sum of a few sine waves, normalized to roughly [-1, 1]. Sine layering
+  // (rather than raw noise) is what keeps a random roll from looking jagged.
+  function makeWaveFn(waveCount: number) {
+    const waves = [];
+    for (let i = 0; i < waveCount; i++) {
+      waves.push({
+        freq: rand(0.8, 2.6) * (i + 1),
+        amp: rand(0.4, 1),
+        phase: rand(0, Math.PI * 2),
+      });
+    }
+    const ampSum = waves.reduce((s, w) => s + w.amp, 0);
+    return (t: number) => {
+      let h = 0;
+      for (const w of waves) {
+        h += Math.sin(t * Math.PI * 2 * w.freq + w.phase) * w.amp;
+      }
+      return h / ampSum;
+    };
+  }
+
+  function ridgeHeights(
+    cols: number,
+    rows: number,
+    bandMinFrac: number,
+    bandMaxFrac: number
+  ) {
+    const wave = makeWaveFn(3);
+    const bandMin = Math.round(rows * bandMinFrac);
+    const bandMax = Math.round(rows * bandMaxFrac);
+    const mid = (bandMin + bandMax) / 2;
+    const amp = (bandMax - bandMin) / 2;
+
+    const heights = new Array(cols);
+    for (let x = 0; x < cols; x++) {
+      const h = wave(x / cols);
+      let top = Math.round(mid - h * amp);
+      top = Math.max(0, Math.min(rows - 1, top));
+      heights[x] = top;
+    }
+    return heights;
+  }
+
+  function paintRidge(
+    grid: Cell[][],
+    ridge: number[],
+    cols: number,
+    rows: number,
+    layer: string,
+    fillChar: string
+  ) {
+    for (let x = 0; x < cols; x++) {
+      const top = ridge[x];
+      const prev = x > 0 ? ridge[x - 1] : top;
+      let edge = "_";
+      if (top < prev) edge = "/";
+      else if (top > prev) edge = "\\";
+
+      for (let y = top; y < rows; y++) {
+        grid[y][x] = { ch: y === top ? edge : fillChar, layer };
+      }
+    }
+  }
+
+  function paintTrees(
+    grid: Cell[][],
+    ridge: number[],
+    cols: number,
+    minGap: number
+  ) {
+    let lastX = -minGap;
+    for (let x = 2; x < cols - 2; x++) {
+      if (x - lastX < minGap) continue;
+      if (Math.random() > 0.16) continue;
+
+      const top = ridge[x];
+      if (top - 1 < 0) continue;
+
+      grid[top - 1][x] = { ch: "^", layer: "tree" };
+      grid[top][x - 1] = { ch: "/", layer: "tree" };
+      grid[top][x + 1] = { ch: "\\", layer: "tree" };
+      lastX = x;
+    }
+  }
+
+  function paintSky(grid: Cell[][], cols: number, skyRows: number) {
+    const starChars = [".", "*", "'", "`"];
+    const starCount = Math.floor(cols * skyRows * 0.035);
+    for (let i = 0; i < starCount; i++) {
+      const x = Math.floor(rand(0, cols));
+      const y = Math.floor(rand(0, skyRows));
+      if (grid[y][x] === null) {
+        grid[y][x] = { ch: pick(starChars), layer: "star" };
+      }
+    }
+    const gx = Math.floor(rand(cols * 0.1, cols * 0.85));
+    const gy = Math.floor(rand(0, skyRows * 0.45));
+    grid[gy][gx] = { ch: "O", layer: "glow" };
+  }
+
+  function escapeHtml(s: string) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function render(grid: Cell[][], rows: number, cols: number) {
+    let html = "";
+    for (let y = 0; y < rows; y++) {
+      const row = grid[y];
+      let x = 0;
+      while (x < cols) {
+        const cell = row[x];
+        if (cell === null) {
+          html += " ";
+          x++;
+          continue;
+        }
+        const layer = cell.layer;
+        let run = cell.ch;
+        let j = x + 1;
+        while (j < cols && row[j] !== null && row[j]!.layer === layer) {
+          run += row[j]!.ch;
+          j++;
+        }
+        html += `<span class="L-${layer}">${escapeHtml(run)}</span>`;
+        x = j;
+      }
+      html += "\n";
+    }
+    return html;
+  }
+
+  function measureCharSize(pre: HTMLElement) {
+    const probe = document.createElement("span");
+    probe.textContent = "#".repeat(20);
+    probe.style.visibility = "hidden";
+    probe.style.position = "absolute";
+    probe.style.whiteSpace = "pre";
+    pre.appendChild(probe);
+    const width = probe.getBoundingClientRect().width / 20;
+    pre.removeChild(probe);
+    return width;
+  }
+
+  function generate() {
+    const wrap = document.getElementById("ascii-landscape");
+    const pre = document.getElementById("ascii-landscape-art");
+    if (!wrap || !pre) return;
+
+    const rows = 30;
+    const charWidth = measureCharSize(pre);
+    if (!charWidth) return;
+
+    const cols = Math.max(
+      60,
+      Math.min(320, Math.floor(wrap.clientWidth / charWidth))
+    );
+
+    const grid: Cell[][] = Array.from({ length: rows }, () =>
+      new Array(cols).fill(null)
+    );
+
+    paintSky(grid, cols, Math.round(rows * 0.42));
+
+    const far = ridgeHeights(cols, rows, 0.4, 0.6);
+    paintRidge(grid, far, cols, rows, "far", ".");
+
+    const mid = ridgeHeights(cols, rows, 0.58, 0.78);
+    paintRidge(grid, mid, cols, rows, "mid", "-");
+
+    const near = ridgeHeights(cols, rows, 0.74, 0.94);
+    paintRidge(grid, near, cols, rows, "near", "#");
+    paintTrees(grid, near, cols, Math.max(8, Math.floor(cols / 14)));
+
+    pre.innerHTML = render(grid, rows, cols);
+  }
+
+  let resizeTimer: ReturnType<typeof setTimeout>;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(generate, 200);
+  });
+
+  generate();
+</script>
+
+<style>
+  .ascii-landscape {
+    position: relative;
+    left: 50%;
+    width: 100vw;
+    margin-left: -50vw;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  .ascii-landscape-art {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: clamp(6px, 0.85vw, 9.5px);
+    line-height: 1;
+    letter-spacing: 0;
+    white-space: pre;
+    text-align: center;
+    user-select: none;
+  }
+
+  .ascii-landscape-art :global(.L-far) { color: var(--land-far); }
+  .ascii-landscape-art :global(.L-mid) { color: var(--land-mid); }
+  .ascii-landscape-art :global(.L-near) { color: var(--land-near); }
+  .ascii-landscape-art :global(.L-tree) { color: var(--land-tree); }
+  .ascii-landscape-art :global(.L-star) { color: var(--land-star); }
+  .ascii-landscape-art :global(.L-glow) { color: var(--land-glow); }
+</style>

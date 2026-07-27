@@ -407,3 +407,26 @@ html, body {
   background: var(--bg) !important;
   color: var(--text) !important;
 }
+
+/* ===== ASCII landscape palette =====
+   Same generated terrain, two moods: warm/sage by day, slate + stars by night.
+*/
+:root {
+  --land-sky: transparent;
+  --land-far: #c3cdb9;
+  --land-mid: #93a97f;
+  --land-near: #4c6b46;
+  --land-tree: #33502f;
+  --land-star: transparent;
+  --land-glow: #d9a441;
+}
+
+[data-theme="dark"] {
+  --land-sky: transparent;
+  --land-far: #2c3d47;
+  --land-mid: #33505a;
+  --land-near: #1c2b28;
+  --land-tree: #14211f;
+  --land-star: #b9c6d6;
+  --land-glow: #eef2f7;
+}

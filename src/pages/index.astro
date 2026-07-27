@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import AsciiLandscape from "../components/AsciiLandscape.astro";
 ---
 
 <BaseLayout
@@ -83,6 +84,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </div>
       </div>
     </section>
+
+    <div class="landscape-slot">
+      <AsciiLandscape />
+    </div>
   </div>
 
   <style>
@@ -170,8 +175,21 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
     /* START SECTION (separate, crisp) */
     .start {
+      position: relative;
+      z-index: 2;
       width: min(1100px, calc(100% - 3rem));
       margin: 1.1rem auto 0;
+    }
+
+    /* Ridgeline sits behind the start card's bottom edge */
+    .landscape-slot {
+      position: relative;
+      z-index: 1;
+      margin-top: -2.4rem;
+    }
+
+    @media (max-width: 700px) {
+      .landscape-slot { margin-top: -1.4rem; }
     }
 
     .start-inner {
