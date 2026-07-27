@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import NavBar from "../components/NavBar.astro";
+import AsciiLandscape from "../components/AsciiLandscape.astro";
 
 const {
   title = "Evan Hobson — Ecological Modeling",
@@ -42,6 +43,9 @@ const canonicalUrl =
 
     <main class="container">
       <slot />
+      <div class="landscape-slot">
+        <AsciiLandscape />
+      </div>
     </main>
 
     <footer class="site-footer">
@@ -57,6 +61,27 @@ const canonicalUrl =
 </html>
 
 <style>
+  /* Ridgeline sits behind the last card's bottom edge on every page and
+     runs down flush to the footer. Negative margins cancel out each
+     page wrapper's own bottom padding (.home/.page/.essay all share the
+     same clamp(2.5rem,5vw,4rem) value) and the footer's top margin —
+     that zeroing is a main:has(.ascii-landscape) rule in global.css,
+     since Astro doesn't correctly scope :global() nested inside :has()
+     when written in a component's own <style> block. */
+  .landscape-slot {
+    position: relative;
+    z-index: 1;
+    margin-top: -1.6rem;
+    margin-bottom: -3.2rem;
+  }
+
+  @media (max-width: 700px) {
+    .landscape-slot {
+      margin-top: -1rem;
+      margin-bottom: -2.4rem;
+    }
+  }
+
   .site-footer {
     margin-top: 3rem;
     padding: 1.5rem 0 2.5rem;

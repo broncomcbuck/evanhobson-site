@@ -365,7 +365,10 @@ h1, h2, h3, h4 {
   color: var(--muted) !important;
 }
 
-/* Unify all cards/boxes */
+/* Unify all cards/boxes. Also gives every card a stacking context above
+   the ASCII landscape (which now appears on every page, right before
+   the footer) so its slight negative-margin overlap never obscures
+   card content, on any page. */
 .item,
 .hero-inner,
 .start-inner,
@@ -374,6 +377,8 @@ h1, h2, h3, h4 {
 .essay-body,
 .essay-block,
 .essay-toc {
+  position: relative;
+  z-index: 2;
   background: var(--surface) !important;
   border: 1px solid var(--border) !important;
   box-shadow: var(--shadow) !important;
