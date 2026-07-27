@@ -24,7 +24,7 @@
 
   type Cell = { ch: string; layer: string } | null;
 
-  type WeatherKind = "birds" | "snow" | "rain" | "tumbleweed";
+  type WeatherKind = "birds" | "tumbleweed";
 
   type Biome = {
     name: string;
@@ -48,7 +48,14 @@
     vegDensity: number;
     snowCaps: boolean;
     grazer: boolean;
+    // recurring transient events (birds flying through, a tumbleweed
+    // rolling past) — these keep re-rolling for as long as the page
+    // is open
     weather: WeatherKind[];
+    // persistent whole-scene precipitation — decided ONCE per page
+    // load/reload; if it's on, it stays on for the whole visit, no
+    // in-between fading in and out
+    precip: "snow" | "rain" | null;
   };
 
   const BIOMES: Biome[] = [
@@ -67,7 +74,8 @@
       vegDensity: 0.17,
       snowCaps: true,
       grazer: false,
-      weather: ["birds", "snow"],
+      weather: ["birds"],
+      precip: "snow",
     },
     {
       name: "desert",
@@ -85,6 +93,7 @@
       snowCaps: false,
       grazer: false,
       weather: ["birds", "tumbleweed"],
+      precip: null,
     },
     {
       name: "steppe",
@@ -101,7 +110,8 @@
       vegDensity: 0.22,
       snowCaps: false,
       grazer: true,
-      weather: ["birds", "rain"],
+      weather: ["birds"],
+      precip: "rain",
     },
   ];
 
@@ -329,24 +339,22 @@
     return width;
   }
 
-  // ===== Occasional animated flourishes: birds, snow, rain, tumbleweed =====
+  // ===== Weather / wildlife =====
+  // Two different kinds of "occasional": persistent precipitation is a
+  // once-per-load coin flip that, if it lands, stays for the whole visit
+  // (a scene property, not an event). Birds/tumbleweed are recurring
+  // transient events that keep re-rolling while the page stays open.
 
   let weatherTimer: ReturnType<typeof setTimeout> | null = null;
-  const activeFlapTimers: ReturnType<typeof setInterval>[] = [];
-  const activeCleanupTimers: ReturnType<typeof setTimeout>[] = [];
-  const activeAnimations: Animation[] = [];
+  const activeIntervals: ReturnType<typeof setInterval>[] = [];
 
   function clearWeather(layer: HTMLElement | null) {
     if (weatherTimer) {
       clearTimeout(weatherTimer);
       weatherTimer = null;
     }
-    for (const t of activeFlapTimers) clearInterval(t);
-    activeFlapTimers.length = 0;
-    for (const t of activeCleanupTimers) clearTimeout(t);
-    activeCleanupTimers.length = 0;
-    for (const a of activeAnimations) a.cancel();
-    activeAnimations.length = 0;
+    for (const t of activeIntervals) clearInterval(t);
+    activeIntervals.length = 0;
     if (layer) layer.innerHTML = "";
   }
 
@@ -364,7 +372,7 @@
       const flap = setInterval(() => {
         bird.textContent = bird.textContent === "v" ? "^" : "v";
       }, 220);
-      activeFlapTimers.push(flap);
+      activeIntervals.push(flap);
 
       bird.addEventListener("animationend", () => {
         clearInterval(flap);
@@ -373,15 +381,12 @@
     }
   }
 
-  // Binary rather than trickling: the full set of particles appears at
-  // once (negative animation-delay puts each mid-fall immediately, so
-  // it reads as "already raining/snowing" rather than fading in) and
-  // loops for a fixed span, then the whole event ends at once.
-  function spawnParticles(layer: HTMLElement, kind: "snow" | "rain") {
+  // Persistent for the whole visit — no cleanup timer. Cleared only when
+  // clearWeather() wipes the layer on the next regenerate (resize/reload).
+  function spawnPersistentPrecip(layer: HTMLElement, kind: "snow" | "rain") {
     const count = kind === "snow" ? 16 : 22;
     const chars = kind === "snow" ? ["*", ".", "'"] : ["|", "'", ","];
     const fallDur = kind === "snow" ? rand(3, 4.5) : rand(1, 1.6);
-    const elements: HTMLElement[] = [];
     for (let i = 0; i < count; i++) {
       const p = document.createElement("span");
       p.className = `wx-particle wx-${kind}`;
@@ -391,46 +396,50 @@
       p.style.animationDelay = -rand(0, fallDur) + "s";
       p.style.animationIterationCount = "infinite";
       layer.appendChild(p);
-      elements.push(p);
     }
-    const eventDuration = rand(4000, 8000);
-    const cleanup = setTimeout(() => {
-      for (const p of elements) p.remove();
-    }, eventDuration);
-    activeCleanupTimers.push(cleanup);
   }
 
-  // Small, and its vertical position is sampled from the actual near-
-  // ridge heights as it crosses, so it rolls along the ground contour
-  // instead of drifting over it in a flat line.
+  // Deliberately NOT smooth interpolation — a setInterval hop from
+  // waypoint to waypoint (position snaps, no easing) plus a cycling
+  // glyph (rotating a near-symmetric "o" via CSS transform barely
+  // reads as motion at all) for a chunky, low-frame-rate sprite feel.
+  // Vertical position at each hop is sampled from the actual near-ridge
+  // heights so it still rolls along the ground contour.
   function spawnTumbleweed(layer: HTMLElement, nearRidge: number[], cols: number, rows: number) {
     const t = document.createElement("span");
     t.className = "wx-tumbleweed";
-    t.textContent = "o";
     layer.appendChild(t);
 
-    const duration = rand(7, 11) * 1000;
-    const steps = 28;
-    const keyframes: Keyframe[] = [];
-    for (let i = 0; i <= steps; i++) {
-      const frac = i / steps;
+    const frames = ["*", "x", "+", "o"];
+    const totalSteps = rand(14, 20);
+    const stepMs = rand(280, 420);
+    let step = 0;
+
+    const tick = () => {
+      const frac = step / totalSteps;
       const x = Math.max(0, Math.min(cols - 1, Math.floor(frac * cols)));
       const topPct = ((nearRidge[x] - 1) / rows) * 100;
       const leftPct = -6 + frac * 112;
-      keyframes.push({
-        left: leftPct + "%",
-        top: topPct + "%",
-        transform: `rotate(${Math.round(frac * 900)}deg)`,
-      });
-    }
-    const anim = t.animate(keyframes, { duration, easing: "linear", fill: "forwards" });
-    activeAnimations.push(anim);
-    anim.onfinish = () => t.remove();
+      t.style.left = leftPct + "%";
+      t.style.top = topPct + "%";
+      t.textContent = frames[step % frames.length];
+      step++;
+      if (step > totalSteps) {
+        clearInterval(hop);
+        t.remove();
+      }
+    };
+
+    tick();
+    const hop = setInterval(tick, stepMs);
+    activeIntervals.push(hop);
   }
 
   // Recurring rather than one-shot: rechecks every so often for as long
   // as the page stays open. Cancelled and restarted by clearWeather()
   // on every regenerate (resize) via the shared weatherTimer handle.
+  // Only covers birds/tumbleweed — precipitation is decided once in
+  // generate(), not here.
   function scheduleNextWeather(
     layer: HTMLElement,
     biome: Biome,
@@ -440,11 +449,10 @@
   ) {
     const delay = rand(6000, 14000);
     weatherTimer = setTimeout(() => {
-      if (Math.random() < 0.55) {
+      if (Math.random() < 0.55 && biome.weather.length > 0) {
         const kind = pick(biome.weather);
         if (kind === "birds") spawnBirds(layer);
-        else if (kind === "tumbleweed") spawnTumbleweed(layer, near, cols, rows);
-        else spawnParticles(layer, kind);
+        else spawnTumbleweed(layer, near, cols, rows);
       }
       scheduleNextWeather(layer, biome, near, cols, rows);
     }, delay);
@@ -490,7 +498,14 @@
 
     pre.innerHTML = render(grid, rows, cols);
 
-    if (weatherLayer) scheduleNextWeather(weatherLayer, biome, near, cols, rows);
+    if (weatherLayer) {
+      // Persistent precipitation: decided once per load, stays for the
+      // whole visit if it lands — not part of the recurring cycle.
+      if (biome.precip && Math.random() < 0.2) {
+        spawnPersistentPrecip(weatherLayer, biome.precip);
+      }
+      scheduleNextWeather(weatherLayer, biome, near, cols, rows);
+    }
   }
 
   let resizeTimer: ReturnType<typeof setTimeout>;
