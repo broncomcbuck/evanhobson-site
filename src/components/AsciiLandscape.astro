@@ -1,5 +1,7 @@
 ---
-// Procedurally generated ASCII ridgeline, regenerated on every load/resize.
+// Procedurally generated ASCII landscape, regenerated on every load/resize.
+// Picks a random biome (pine / desert / steppe) each time, each with its
+// own terrain-shape math, vegetation, and CSS palette (data-biome attr).
 // Single merged character grid so nearer ridges properly occlude farther
 // ones (no overlapping/garbled glyphs from independently stacked layers).
 ---
@@ -19,14 +21,63 @@
 
   type Cell = { ch: string; layer: string } | null;
 
-  // Sum of a few sine waves, normalized to roughly [-1, 1]. Sine layering
-  // (rather than raw noise) is what keeps a random roll from looking jagged.
-  function makeWaveFn(waveCount: number) {
+  type Biome = {
+    name: string;
+    ridged: boolean;
+    waveCount: number;
+    freqRange: [number, number];
+    ampScale: number;
+    veg: "tree" | "cactus" | "shrub";
+    vegDensity: number;
+    snowCaps: boolean;
+    grazer: boolean;
+  };
+
+  const BIOMES: Biome[] = [
+    {
+      name: "pine",
+      ridged: true,
+      waveCount: 3,
+      freqRange: [0.9, 2.6],
+      ampScale: 1,
+      veg: "tree",
+      vegDensity: 0.17,
+      snowCaps: true,
+      grazer: false,
+    },
+    {
+      name: "desert",
+      ridged: false,
+      waveCount: 2,
+      freqRange: [0.4, 1.1],
+      ampScale: 0.85,
+      veg: "cactus",
+      vegDensity: 0.07,
+      snowCaps: false,
+      grazer: false,
+    },
+    {
+      name: "steppe",
+      ridged: false,
+      waveCount: 2,
+      freqRange: [0.5, 1.2],
+      ampScale: 0.55,
+      veg: "shrub",
+      vegDensity: 0.22,
+      snowCaps: false,
+      grazer: true,
+    },
+  ];
+
+  // Sum of a few sine waves. Plain sine sum -> smooth rolling terrain.
+  // "Ridged" sum (1 - |sin|) per octave -> sharp cusped peaks over flatter
+  // valleys, the standard trick for jagged mountain-like silhouettes.
+  function makeWaveFn(waveCount: number, ridged: boolean, freqRange: [number, number]) {
     const waves = [];
     for (let i = 0; i < waveCount; i++) {
       waves.push({
-        freq: rand(0.8, 2.6) * (i + 1),
-        amp: rand(0.4, 1),
+        freq: rand(freqRange[0], freqRange[1]) * (i + 1),
+        amp: rand(0.4, 1) / (i + 1),
         phase: rand(0, Math.PI * 2),
       });
     }
@@ -34,7 +85,9 @@
     return (t: number) => {
       let h = 0;
       for (const w of waves) {
-        h += Math.sin(t * Math.PI * 2 * w.freq + w.phase) * w.amp;
+        let v = Math.sin(t * Math.PI * 2 * w.freq + w.phase);
+        if (ridged) v = 1 - Math.abs(v);
+        h += v * w.amp;
       }
       return h / ampSum;
     };
@@ -44,18 +97,26 @@
     cols: number,
     rows: number,
     bandMinFrac: number,
-    bandMaxFrac: number
+    bandMaxFrac: number,
+    biome: Biome
   ) {
-    const wave = makeWaveFn(3);
+    const wave = makeWaveFn(biome.waveCount, biome.ridged, biome.freqRange);
     const bandMin = Math.round(rows * bandMinFrac);
     const bandMax = Math.round(rows * bandMaxFrac);
-    const mid = (bandMin + bandMax) / 2;
-    const amp = (bandMax - bandMin) / 2;
 
     const heights = new Array(cols);
     for (let x = 0; x < cols; x++) {
       const h = wave(x / cols);
-      let top = Math.round(mid - h * amp);
+      let top: number;
+      if (biome.ridged) {
+        // h in [0,1]: 0 = valley (bandMax), 1 = sharp peak (bandMin)
+        top = Math.round(bandMax - h * (bandMax - bandMin));
+      } else {
+        // h in ~[-1,1]: symmetric displacement around the band midpoint
+        const mid = (bandMin + bandMax) / 2;
+        const amp = ((bandMax - bandMin) / 2) * biome.ampScale;
+        top = Math.round(mid - h * amp);
+      }
       top = Math.max(0, Math.min(rows - 1, top));
       heights[x] = top;
     }
@@ -83,30 +144,62 @@
     }
   }
 
-  function paintTrees(
+  function paintSnowCaps(grid: Cell[][], ridge: number[], cols: number, rows: number) {
+    const peak = Math.min(...ridge);
+    const threshold = peak + 2;
+    for (let x = 0; x < cols; x++) {
+      if (ridge[x] > threshold) continue;
+      const top = ridge[x];
+      grid[top][x] = { ch: "^", layer: "snow" };
+      if (top + 1 < rows) grid[top + 1][x] = { ch: "*", layer: "snow" };
+    }
+  }
+
+  function paintVegetation(
     grid: Cell[][],
     ridge: number[],
     cols: number,
-    minGap: number
+    biome: Biome
   ) {
+    const minGap = Math.max(6, Math.floor(cols / (biome.vegDensity * 60)));
     let lastX = -minGap;
+    let placedGrazer = false;
+
     for (let x = 2; x < cols - 2; x++) {
       if (x - lastX < minGap) continue;
-      if (Math.random() > 0.16) continue;
+      if (Math.random() > biome.vegDensity) continue;
 
       const top = ridge[x];
-      if (top - 1 < 0) continue;
 
-      grid[top - 1][x] = { ch: "^", layer: "tree" };
-      grid[top][x - 1] = { ch: "/", layer: "tree" };
-      grid[top][x + 1] = { ch: "\\", layer: "tree" };
+      if (biome.veg === "shrub") {
+        grid[top][x - 1] = { ch: "o", layer: "veg" };
+        grid[top][x] = { ch: "@", layer: "veg" };
+        grid[top][x + 1] = { ch: "o", layer: "veg" };
+        lastX = x;
+        continue;
+      }
+
+      // "tree" (pine) or "cactus": two-row glyph above the ridge
+      if (top - 1 < 0) continue;
+      const capChar = biome.veg === "cactus" ? "Y" : "^";
+      grid[top - 1][x] = { ch: capChar, layer: "veg" };
+      grid[top][x - 1] = { ch: "/", layer: "veg" };
+      grid[top][x + 1] = { ch: "\\", layer: "veg" };
       lastX = x;
+    }
+
+    // steppe-only easter egg: a single tiny grazing-animal silhouette
+    if (biome.grazer && !placedGrazer && Math.random() < 0.6) {
+      const x = Math.floor(rand(cols * 0.15, cols * 0.85));
+      const top = ridge[x];
+      grid[top][x] = { ch: "m", layer: "veg" };
+      placedGrazer = true;
     }
   }
 
   function paintSky(grid: Cell[][], cols: number, skyRows: number) {
     const starChars = [".", "*", "'", "`"];
-    const starCount = Math.floor(cols * skyRows * 0.035);
+    const starCount = Math.floor(cols * skyRows * 0.045);
     for (let i = 0; i < starCount; i++) {
       const x = Math.floor(rand(0, cols));
       const y = Math.floor(rand(0, skyRows));
@@ -114,8 +207,8 @@
         grid[y][x] = { ch: pick(starChars), layer: "star" };
       }
     }
-    const gx = Math.floor(rand(cols * 0.1, cols * 0.85));
-    const gy = Math.floor(rand(0, skyRows * 0.45));
+    const gx = Math.floor(rand(cols * 0.08, cols * 0.88));
+    const gy = Math.floor(rand(0, skyRows * 0.5));
     grid[gy][gx] = { ch: "O", layer: "glow" };
   }
 
@@ -167,30 +260,34 @@
     const pre = document.getElementById("ascii-landscape-art");
     if (!wrap || !pre) return;
 
-    const rows = 30;
+    const biome = pick(BIOMES);
+    wrap.dataset.biome = biome.name;
+
+    const rows = 40;
     const charWidth = measureCharSize(pre);
     if (!charWidth) return;
 
     const cols = Math.max(
       60,
-      Math.min(320, Math.floor(wrap.clientWidth / charWidth))
+      Math.min(340, Math.floor(wrap.clientWidth / charWidth))
     );
 
     const grid: Cell[][] = Array.from({ length: rows }, () =>
       new Array(cols).fill(null)
     );
 
-    paintSky(grid, cols, Math.round(rows * 0.42));
+    paintSky(grid, cols, Math.round(rows * 0.4));
 
-    const far = ridgeHeights(cols, rows, 0.4, 0.6);
+    const far = ridgeHeights(cols, rows, 0.26, 0.46, biome);
     paintRidge(grid, far, cols, rows, "far", ".");
 
-    const mid = ridgeHeights(cols, rows, 0.58, 0.78);
-    paintRidge(grid, mid, cols, rows, "mid", "-");
+    const mid = ridgeHeights(cols, rows, 0.48, 0.7, biome);
+    paintRidge(grid, mid, cols, rows, "mid", ":");
 
-    const near = ridgeHeights(cols, rows, 0.74, 0.94);
+    const near = ridgeHeights(cols, rows, 0.7, 0.97, biome);
     paintRidge(grid, near, cols, rows, "near", "#");
-    paintTrees(grid, near, cols, Math.max(8, Math.floor(cols / 14)));
+    if (biome.snowCaps) paintSnowCaps(grid, near, cols, rows);
+    paintVegetation(grid, near, cols, biome);
 
     pre.innerHTML = render(grid, rows, cols);
   }
@@ -219,18 +316,87 @@
     padding: 0;
     width: 100%;
     font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
-    font-size: clamp(6px, 0.85vw, 9.5px);
+    font-size: clamp(6px, 0.95vw, 10.5px);
     line-height: 1;
     letter-spacing: 0;
     white-space: pre;
     text-align: center;
     user-select: none;
+    font-weight: 600;
   }
 
   .ascii-landscape-art :global(.L-far) { color: var(--land-far); }
   .ascii-landscape-art :global(.L-mid) { color: var(--land-mid); }
   .ascii-landscape-art :global(.L-near) { color: var(--land-near); }
-  .ascii-landscape-art :global(.L-tree) { color: var(--land-tree); }
+  .ascii-landscape-art :global(.L-veg) { color: var(--land-veg); }
+  .ascii-landscape-art :global(.L-snow) { color: var(--land-snow); }
   .ascii-landscape-art :global(.L-star) { color: var(--land-star); }
-  .ascii-landscape-art :global(.L-glow) { color: var(--land-glow); }
+  .ascii-landscape-art :global(.L-glow) { color: var(--land-glow); font-weight: 800; }
+
+  /* ===== Biome sky backdrops + palettes ===== */
+  /* Pine (default light) */
+  .ascii-landscape[data-biome="pine"] {
+    background: linear-gradient(to bottom, #cfe3ef 0%, #eaf3ee 55%, var(--bg) 100%);
+    --land-far: #a9c2b3;
+    --land-mid: #6f9a80;
+    --land-near: #2c5a44;
+    --land-veg: #1c3f2f;
+    --land-snow: #ffffff;
+    --land-star: transparent;
+    --land-glow: #f5c463;
+  }
+  :global(html[data-theme="dark"]) .ascii-landscape[data-biome="pine"] {
+    background: linear-gradient(to bottom, #0a1420 0%, #0d1b1c 55%, var(--bg) 100%);
+    --land-far: #274038;
+    --land-mid: #1d3f38;
+    --land-near: #0f2621;
+    --land-veg: #0a1815;
+    --land-snow: #dfeaec;
+    --land-star: #b9c6d6;
+    --land-glow: #eef2f7;
+  }
+
+  /* Desert */
+  .ascii-landscape[data-biome="desert"] {
+    background: linear-gradient(to bottom, #ffd9a0 0%, #ffe9c8 50%, var(--bg) 100%);
+    --land-far: #e3c093;
+    --land-mid: #cf9c5c;
+    --land-near: #8a5a2e;
+    --land-veg: #4f6b3a;
+    --land-snow: transparent;
+    --land-star: transparent;
+    --land-glow: #ff9d4d;
+  }
+  :global(html[data-theme="dark"]) .ascii-landscape[data-biome="desert"] {
+    background: linear-gradient(to bottom, #1c1013 0%, #170f11 55%, var(--bg) 100%);
+    --land-far: #4a3527;
+    --land-mid: #3a2818;
+    --land-near: #21140a;
+    --land-veg: #2c3a20;
+    --land-snow: transparent;
+    --land-star: #e0c9a6;
+    --land-glow: #f2e3c8;
+  }
+
+  /* Steppe */
+  .ascii-landscape[data-biome="steppe"] {
+    background: linear-gradient(to bottom, #f3e2a8 0%, #f0ead2 50%, var(--bg) 100%);
+    --land-far: #c7c79c;
+    --land-mid: #a3a375;
+    --land-near: #666638;
+    --land-veg: #4c5c30;
+    --land-snow: transparent;
+    --land-star: transparent;
+    --land-glow: #e8b95c;
+  }
+  :global(html[data-theme="dark"]) .ascii-landscape[data-biome="steppe"] {
+    background: linear-gradient(to bottom, #14140e 0%, #101008 55%, var(--bg) 100%);
+    --land-far: #3a3a26;
+    --land-mid: #2c2c1a;
+    --land-near: #17170c;
+    --land-veg: #232312;
+    --land-snow: transparent;
+    --land-star: #cfcaa8;
+    --land-glow: #ece7c9;
+  }
 </style>

@@ -181,15 +181,22 @@ import AsciiLandscape from "../components/AsciiLandscape.astro";
       margin: 1.1rem auto 0;
     }
 
-    /* Ridgeline sits behind the start card's bottom edge */
+    /* Ridgeline sits behind the start card's bottom edge and runs down
+       flush to the footer (negative bottom margin cancels .home's
+       trailing padding; the footer's own top margin is zeroed in
+       BaseLayout when it follows this section). */
     .landscape-slot {
       position: relative;
       z-index: 1;
-      margin-top: -2.4rem;
+      margin-top: -1.6rem;
+      margin-bottom: -3.2rem;
     }
 
     @media (max-width: 700px) {
-      .landscape-slot { margin-top: -1.4rem; }
+      .landscape-slot {
+        margin-top: -1rem;
+        margin-bottom: -2.4rem;
+      }
     }
 
     .start-inner {

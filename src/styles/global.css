@@ -408,25 +408,12 @@ html, body {
   color: var(--text) !important;
 }
 
-/* ===== ASCII landscape palette =====
-   Same generated terrain, two moods: warm/sage by day, slate + stars by night.
+/* ===== ASCII landscape =====
+   Per-biome palettes live scoped to the component itself
+   (src/components/AsciiLandscape.astro), keyed off [data-biome].
+   This lives here, unscoped, because Astro's component-level CSS
+   scoping doesn't correctly handle :global() nested inside :has().
 */
-:root {
-  --land-sky: transparent;
-  --land-far: #c3cdb9;
-  --land-mid: #93a97f;
-  --land-near: #4c6b46;
-  --land-tree: #33502f;
-  --land-star: transparent;
-  --land-glow: #d9a441;
-}
-
-[data-theme="dark"] {
-  --land-sky: transparent;
-  --land-far: #2c3d47;
-  --land-mid: #33505a;
-  --land-near: #1c2b28;
-  --land-tree: #14211f;
-  --land-star: #b9c6d6;
-  --land-glow: #eef2f7;
+main:has(.ascii-landscape) + .site-footer {
+  margin-top: 0;
 }
