@@ -329,10 +329,12 @@
     return width;
   }
 
-  // ===== Rare animated flourishes: birds, snow, rain, tumbleweed =====
+  // ===== Occasional animated flourishes: birds, snow, rain, tumbleweed =====
 
   let weatherTimer: ReturnType<typeof setTimeout> | null = null;
   const activeFlapTimers: ReturnType<typeof setInterval>[] = [];
+  const activeCleanupTimers: ReturnType<typeof setTimeout>[] = [];
+  const activeAnimations: Animation[] = [];
 
   function clearWeather(layer: HTMLElement | null) {
     if (weatherTimer) {
@@ -341,6 +343,10 @@
     }
     for (const t of activeFlapTimers) clearInterval(t);
     activeFlapTimers.length = 0;
+    for (const t of activeCleanupTimers) clearTimeout(t);
+    activeCleanupTimers.length = 0;
+    for (const a of activeAnimations) a.cancel();
+    activeAnimations.length = 0;
     if (layer) layer.innerHTML = "";
   }
 
@@ -367,46 +373,80 @@
     }
   }
 
+  // Binary rather than trickling: the full set of particles appears at
+  // once (negative animation-delay puts each mid-fall immediately, so
+  // it reads as "already raining/snowing" rather than fading in) and
+  // loops for a fixed span, then the whole event ends at once.
   function spawnParticles(layer: HTMLElement, kind: "snow" | "rain") {
-    const count = kind === "snow" ? 20 : 26;
+    const count = kind === "snow" ? 16 : 22;
     const chars = kind === "snow" ? ["*", ".", "'"] : ["|", "'", ","];
-    const durRange: [number, number] = kind === "snow" ? [3.5, 5.5] : [1.3, 2.1];
+    const fallDur = kind === "snow" ? rand(3, 4.5) : rand(1, 1.6);
+    const elements: HTMLElement[] = [];
     for (let i = 0; i < count; i++) {
       const p = document.createElement("span");
       p.className = `wx-particle wx-${kind}`;
       p.textContent = pick(chars);
       p.style.left = rand(0, 100) + "%";
-      p.style.animationDuration = rand(durRange[0], durRange[1]) + "s";
-      p.style.animationDelay = rand(0, 3) + "s";
+      p.style.animationDuration = fallDur + "s";
+      p.style.animationDelay = -rand(0, fallDur) + "s";
+      p.style.animationIterationCount = "infinite";
       layer.appendChild(p);
-      p.addEventListener("animationend", () => p.remove());
+      elements.push(p);
     }
+    const eventDuration = rand(4000, 8000);
+    const cleanup = setTimeout(() => {
+      for (const p of elements) p.remove();
+    }, eventDuration);
+    activeCleanupTimers.push(cleanup);
   }
 
-  function spawnTumbleweed(layer: HTMLElement) {
+  // Small, and its vertical position is sampled from the actual near-
+  // ridge heights as it crosses, so it rolls along the ground contour
+  // instead of drifting over it in a flat line.
+  function spawnTumbleweed(layer: HTMLElement, nearRidge: number[], cols: number, rows: number) {
     const t = document.createElement("span");
     t.className = "wx-tumbleweed";
-    t.textContent = "@";
-    t.style.bottom = rand(2, 9) + "%";
-    t.style.animationDuration = rand(6, 9) + "s";
+    t.textContent = "o";
     layer.appendChild(t);
-    t.addEventListener("animationend", () => t.remove());
+
+    const duration = rand(7, 11) * 1000;
+    const steps = 28;
+    const keyframes: Keyframe[] = [];
+    for (let i = 0; i <= steps; i++) {
+      const frac = i / steps;
+      const x = Math.max(0, Math.min(cols - 1, Math.floor(frac * cols)));
+      const topPct = ((nearRidge[x] - 1) / rows) * 100;
+      const leftPct = -6 + frac * 112;
+      keyframes.push({
+        left: leftPct + "%",
+        top: topPct + "%",
+        transform: `rotate(${Math.round(frac * 900)}deg)`,
+      });
+    }
+    const anim = t.animate(keyframes, { duration, easing: "linear", fill: "forwards" });
+    activeAnimations.push(anim);
+    anim.onfinish = () => t.remove();
   }
 
-  // Recurring rather than one-shot: checks in every few seconds for as
-  // long as the page stays open, so it feels alive without being
-  // constant/overwhelming. Cancelled and restarted by clearWeather() on
-  // every regenerate (resize) via the shared weatherTimer handle.
-  function scheduleNextWeather(layer: HTMLElement, biome: Biome) {
-    const delay = rand(2500, 7000);
+  // Recurring rather than one-shot: rechecks every so often for as long
+  // as the page stays open. Cancelled and restarted by clearWeather()
+  // on every regenerate (resize) via the shared weatherTimer handle.
+  function scheduleNextWeather(
+    layer: HTMLElement,
+    biome: Biome,
+    near: number[],
+    cols: number,
+    rows: number
+  ) {
+    const delay = rand(6000, 14000);
     weatherTimer = setTimeout(() => {
-      if (Math.random() < 0.7) {
+      if (Math.random() < 0.55) {
         const kind = pick(biome.weather);
         if (kind === "birds") spawnBirds(layer);
-        else if (kind === "tumbleweed") spawnTumbleweed(layer);
+        else if (kind === "tumbleweed") spawnTumbleweed(layer, near, cols, rows);
         else spawnParticles(layer, kind);
       }
-      scheduleNextWeather(layer, biome);
+      scheduleNextWeather(layer, biome, near, cols, rows);
     }, delay);
   }
 
@@ -450,7 +490,7 @@
 
     pre.innerHTML = render(grid, rows, cols);
 
-    if (weatherLayer) scheduleNextWeather(weatherLayer, biome);
+    if (weatherLayer) scheduleNextWeather(weatherLayer, biome, near, cols, rows);
   }
 
   let resizeTimer: ReturnType<typeof setTimeout>;
@@ -583,19 +623,21 @@
     top: -6%;
     animation-name: wx-fall;
     animation-timing-function: linear;
-    animation-fill-mode: forwards;
   }
 
   .ascii-landscape-weather :global(.wx-snow) { color: var(--text-2); }
   .ascii-landscape-weather :global(.wx-rain) { color: var(--muted); }
 
+  /* Positioned/rotated via the Web Animations API in JS (it samples the
+     actual terrain height as it crosses, not a flat CSS keyframe path),
+     so only static appearance lives here. Deliberately smaller than
+     birds/particles. */
   .ascii-landscape-weather :global(.wx-tumbleweed) {
     position: absolute;
     left: -6%;
     color: var(--muted);
-    animation-name: wx-tumble;
-    animation-timing-function: linear;
-    animation-fill-mode: forwards;
+    font-size: 0.6em;
+    font-weight: 800;
   }
 
   @keyframes wx-fly {
@@ -604,13 +646,8 @@
   }
 
   @keyframes wx-fall {
-    from { top: -6%; opacity: 1; }
-    to { top: 106%; opacity: 0.6; }
-  }
-
-  @keyframes wx-tumble {
-    from { left: -6%; transform: rotate(0deg); }
-    to { left: 106%; transform: rotate(1080deg); }
+    0% { top: -6%; opacity: 1; }
+    100% { top: 106%; opacity: 0.85; }
   }
 
   /* Gentle atmospheric breathing on the two background layers — subtle,
