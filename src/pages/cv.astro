@@ -17,24 +17,63 @@ const description =
     <!-- Download link -->
     <p style="margin-bottom: 1.5rem;">
       <a
+        class="dl"
         href="/cv/Evan_Hobson_CV.pdf"
         target="_blank"
         rel="noopener"
-        style="font-weight: 700; border-bottom: 1px solid currentColor;"
       >
         Download CV (PDF)
       </a>
     </p>
 
-    <!-- Embedded PDF -->
-    <article class="item">
+    <!-- Embedded PDF (desktop only — mobile browsers generally can't render an -->
+    <!-- inline PDF iframe, so mobile gets a prominent open-in-new-tab card instead) -->
+    <article class="item pdf-embed">
       <iframe
         src="/cv/Evan_Hobson_CV.pdf"
         width="100%"
         height="900"
-        style="border: none; border-radius: 12px;"
         title="Evan Hobson Curriculum Vitae"
       ></iframe>
     </article>
+
+    <article class="item pdf-fallback">
+      <p>Your browser may not display the CV inline here.</p>
+      <a class="dl" href="/cv/Evan_Hobson_CV.pdf" target="_blank" rel="noopener">
+        Open CV in a new tab →
+      </a>
+    </article>
   </section>
 </BaseLayout>
+
+<style>
+  .dl {
+    font-weight: 700;
+    border-bottom: 1px solid currentColor;
+    text-decoration: none;
+    color: var(--text);
+  }
+
+  .pdf-embed iframe {
+    border: none;
+    border-radius: 12px;
+    display: block;
+  }
+
+  .pdf-fallback {
+    display: none;
+    text-align: center;
+  }
+
+  .pdf-fallback p {
+    margin: 0 0 0.75rem;
+    color: var(--text-2);
+  }
+
+  /* Most mobile browsers can't render an inline PDF iframe usefully —
+     swap the embed for a clear "open in new tab" card instead. */
+  @media (max-width: 640px) {
+    .pdf-embed { display: none; }
+    .pdf-fallback { display: block; }
+  }
+</style>
