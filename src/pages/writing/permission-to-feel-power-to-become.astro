@@ -101,10 +101,10 @@ const date = "2024";
 
     .essay-header {
       padding: 1.35rem 1.5rem;
-      border-radius: 22px;
-      background: rgba(255,255,255,0.88);
-      border: 1px solid rgba(0,0,0,0.06);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+      border-radius: var(--r-xl, 22px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
       margin-bottom: 1.5rem;
     }
 
@@ -113,15 +113,15 @@ const date = "2024";
       font-size: 0.92rem;
       letter-spacing: 0.03em;
       text-transform: uppercase;
-      color: rgba(45, 36, 27, 0.65);
+      color: var(--muted);
       font-weight: 750;
     }
 
     h1 {
-      font-family: "Literata", Georgia, serif;
+      font-family: var(--font-serif, "Literata", Georgia, serif);
       font-size: clamp(2.05rem, 3.3vw, 2.7rem);
       margin: 0 0 0.35rem;
-      color: #2d241b;
+      color: var(--text);
       line-height: 1.15;
     }
 
@@ -129,33 +129,33 @@ const date = "2024";
       margin: 0.2rem 0 0.85rem;
       font-size: 1.06rem;
       line-height: 1.6;
-      color: rgba(45,36,27,0.78);
+      color: var(--text-2);
       max-width: 72ch;
     }
 
     .back {
       text-decoration: none;
       font-weight: 750;
-      color: rgba(45,36,27,0.92);
-      border-bottom: 1px solid rgba(0,0,0,0.25);
+      color: var(--text);
+      border-bottom: 1px solid color-mix(in oklab, var(--text) 28%, transparent);
       padding-bottom: 2px;
     }
-    .back:hover { border-bottom-color: rgba(0,0,0,0.45); }
+    .back:hover { border-bottom-color: color-mix(in oklab, var(--accent) 55%, transparent); }
 
     /* ONE continuous essay body box */
     .essay-body {
-      background: rgba(255,255,255,0.86);
-      border: 1px solid rgba(0,0,0,0.06);
-      border-radius: 22px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl, 22px);
+      box-shadow: var(--shadow);
       padding: clamp(1.25rem, 2.8vw, 2rem);
     }
 
     .essay-body h2 {
-      font-family: "Literata", Georgia, serif;
+      font-family: var(--font-serif, "Literata", Georgia, serif);
       font-size: 1.45rem;
       margin: 1.6rem 0 0.65rem;
-      color: #2d241b;
+      color: var(--text);
       line-height: 1.25;
     }
 
@@ -164,17 +164,17 @@ const date = "2024";
     }
 
     .essay-body h3 {
-      font-family: "Literata", Georgia, serif;
+      font-family: var(--font-serif, "Literata", Georgia, serif);
       font-size: 1.12rem;
       margin: 1.15rem 0 0.5rem;
-      color: rgba(45,36,27,0.92);
+      color: var(--text);
       line-height: 1.25;
     }
 
     .essay-body p {
       margin: 0 0 0.95rem;
       line-height: 1.85;
-      color: rgba(45,36,27,0.82);
+      color: var(--text-2);
       font-size: 1.03rem;
       max-width: 80ch;
     }
@@ -185,7 +185,7 @@ const date = "2024";
       padding-left: 1.15rem;
       display: grid;
       gap: 0.55rem;
-      color: rgba(45,36,27,0.82);
+      color: var(--text-2);
       line-height: 1.75;
       font-size: 1.03rem;
       max-width: 80ch;
@@ -197,7 +197,7 @@ const date = "2024";
       line-height: 0;
     }
     .fn a {
-      color: #8a5a2b;
+      color: var(--accent);
       text-decoration: none;
       font-weight: 700;
       padding: 0 1px;
@@ -211,13 +211,13 @@ const date = "2024";
       gap: 0.5rem;
       font-size: 0.92rem;
       line-height: 1.65;
-      color: rgba(45,36,27,0.75);
+      color: var(--muted);
     }
     .essay-body .notes li {
       scroll-margin-top: 2rem;
     }
     .essay-body .notes a {
-      color: #8a5a2b;
+      color: var(--accent);
       word-break: break-word;
     }
     .fnback {
