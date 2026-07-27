@@ -194,10 +194,13 @@
       if (top - 2 < 0) continue;
 
       if (biome.veg === "cactus") {
-        // saguaro: forked arms above a trunk
-        grid[top - 2][x - 1] = { ch: "/", layer: "veg" };
+        // saguaro: arms curving UP and outward from the trunk (not
+        // drooping down like palm fronds — "\" and "/" are swapped
+        // from what you'd first guess, since "\" rises toward its
+        // outer/left end and "/" rises toward its outer/right end)
+        grid[top - 2][x - 1] = { ch: "\\", layer: "veg" };
         grid[top - 2][x] = { ch: "|", layer: "veg" };
-        grid[top - 2][x + 1] = { ch: "\\", layer: "veg" };
+        grid[top - 2][x + 1] = { ch: "/", layer: "veg" };
         grid[top - 1][x] = { ch: "|", layer: "veg" };
         grid[top][x] = { ch: "|", layer: "veg" };
         lastX = x;
@@ -343,14 +346,20 @@
     t.addEventListener("animationend", () => t.remove());
   }
 
-  function maybeScheduleWeather(layer: HTMLElement, biome: Biome) {
-    if (Math.random() >= 0.35) return;
-    const kind = pick(biome.weather);
-    const delay = rand(1500, 6000);
+  // Recurring rather than one-shot: checks in every few seconds for as
+  // long as the page stays open, so it feels alive without being
+  // constant/overwhelming. Cancelled and restarted by clearWeather() on
+  // every regenerate (resize) via the shared weatherTimer handle.
+  function scheduleNextWeather(layer: HTMLElement, biome: Biome) {
+    const delay = rand(2500, 7000);
     weatherTimer = setTimeout(() => {
-      if (kind === "birds") spawnBirds(layer);
-      else if (kind === "tumbleweed") spawnTumbleweed(layer);
-      else spawnParticles(layer, kind);
+      if (Math.random() < 0.7) {
+        const kind = pick(biome.weather);
+        if (kind === "birds") spawnBirds(layer);
+        else if (kind === "tumbleweed") spawnTumbleweed(layer);
+        else spawnParticles(layer, kind);
+      }
+      scheduleNextWeather(layer, biome);
     }, delay);
   }
 
@@ -393,7 +402,7 @@
 
     pre.innerHTML = render(grid, rows, cols);
 
-    if (weatherLayer) maybeScheduleWeather(weatherLayer, biome);
+    if (weatherLayer) scheduleNextWeather(weatherLayer, biome);
   }
 
   let resizeTimer: ReturnType<typeof setTimeout>;
