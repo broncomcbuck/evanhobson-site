@@ -32,6 +32,18 @@
     waveCount: number;
     freqRange: [number, number];
     ampScale: number;
+    // extra amplitude multiplier applied only to the far/mid layers, on
+    // top of ampScale — lets a biome (desert) have a flatter horizon
+    // without flattening its own foreground dunes
+    farMidFlatten: number;
+    // weighted fill-character sets for the two background layers (mostly
+    // the first character, occasional variety mixed in for texture
+    // instead of a flat solid block)
+    farFill: string[];
+    midFill: string[];
+    // sparse single-glyph accents scattered along the mid ridge line
+    midDetailChar: string;
+    midDetailDensity: number;
     veg: "tree" | "cactus" | "shrub";
     vegDensity: number;
     snowCaps: boolean;
@@ -46,6 +58,11 @@
       waveCount: 3,
       freqRange: [0.9, 2.6],
       ampScale: 1,
+      farMidFlatten: 1,
+      farFill: [".", ".", ".", "'"],
+      midFill: [":", ":", ":", "-"],
+      midDetailChar: "^",
+      midDetailDensity: 0.06,
       veg: "tree",
       vegDensity: 0.17,
       snowCaps: true,
@@ -58,6 +75,11 @@
       waveCount: 2,
       freqRange: [0.4, 1.1],
       ampScale: 0.85,
+      farMidFlatten: 0.45,
+      farFill: ["~", "~", "~", "."],
+      midFill: ["~", "~", "~", ":"],
+      midDetailChar: "o",
+      midDetailDensity: 0.05,
       veg: "cactus",
       vegDensity: 0.07,
       snowCaps: false,
@@ -70,6 +92,11 @@
       waveCount: 2,
       freqRange: [0.5, 1.2],
       ampScale: 0.55,
+      farMidFlatten: 1,
+      farFill: [".", ".", ".", "'"],
+      midFill: [":", ":", ":", "-"],
+      midDetailChar: "'",
+      midDetailDensity: 0.07,
       veg: "shrub",
       vegDensity: 0.22,
       snowCaps: false,
@@ -107,7 +134,8 @@
     rows: number,
     bandMinFrac: number,
     bandMaxFrac: number,
-    biome: Biome
+    biome: Biome,
+    extraAmpScale = 1
   ) {
     const wave = makeWaveFn(biome.waveCount, biome.ridged, biome.freqRange);
     const bandMin = Math.round(rows * bandMinFrac);
@@ -119,11 +147,12 @@
       let top: number;
       if (biome.ridged) {
         // h in [0,1]: 0 = valley (bandMax), 1 = sharp peak (bandMin)
-        top = Math.round(bandMax - h * (bandMax - bandMin));
+        const amp = (bandMax - bandMin) * extraAmpScale;
+        top = Math.round(bandMax - h * amp);
       } else {
         // h in ~[-1,1]: symmetric displacement around the band midpoint
         const mid = (bandMin + bandMax) / 2;
-        const amp = ((bandMax - bandMin) / 2) * biome.ampScale;
+        const amp = ((bandMax - bandMin) / 2) * biome.ampScale * extraAmpScale;
         top = Math.round(mid - h * amp);
       }
       top = Math.max(0, Math.min(rows - 1, top));
@@ -132,13 +161,16 @@
     return heights;
   }
 
+  // fillChars is a weighted set (repeat a character to make it more
+  // common) rather than one flat character — gives the fill a bit of
+  // dithered texture instead of a solid uniform block.
   function paintRidge(
     grid: Cell[][],
     ridge: number[],
     cols: number,
     rows: number,
     layer: string,
-    fillChar: string
+    fillChars: string[]
   ) {
     for (let x = 0; x < cols; x++) {
       const top = ridge[x];
@@ -148,8 +180,23 @@
       else if (top > prev) edge = "\\";
 
       for (let y = top; y < rows; y++) {
-        grid[y][x] = { ch: y === top ? edge : fillChar, layer };
+        grid[y][x] = { ch: y === top ? edge : pick(fillChars), layer };
       }
+    }
+  }
+
+  // Sparse single-glyph accents along the mid ridge — a receding
+  // treeline/rockline/grass-tuft suggestion, kept in the mid layer's own
+  // color so the far < mid < near depth ordering stays unambiguous.
+  function paintMidDetail(grid: Cell[][], ridge: number[], cols: number, biome: Biome) {
+    const minGap = Math.max(4, Math.floor(cols / (biome.midDetailDensity * 90)));
+    let lastX = -minGap;
+    for (let x = 1; x < cols - 1; x++) {
+      if (x - lastX < minGap) continue;
+      if (Math.random() > biome.midDetailDensity) continue;
+      const top = ridge[x];
+      grid[top][x] = { ch: biome.midDetailChar, layer: "mid" };
+      lastX = x;
     }
   }
 
@@ -389,14 +436,15 @@
 
     paintSky(grid, cols, Math.round(rows * 0.4));
 
-    const far = ridgeHeights(cols, rows, 0.26, 0.46, biome);
-    paintRidge(grid, far, cols, rows, "far", ".");
+    const far = ridgeHeights(cols, rows, 0.26, 0.46, biome, biome.farMidFlatten);
+    paintRidge(grid, far, cols, rows, "far", biome.farFill);
 
-    const mid = ridgeHeights(cols, rows, 0.48, 0.7, biome);
-    paintRidge(grid, mid, cols, rows, "mid", ":");
+    const mid = ridgeHeights(cols, rows, 0.48, 0.7, biome, biome.farMidFlatten);
+    paintRidge(grid, mid, cols, rows, "mid", biome.midFill);
+    paintMidDetail(grid, mid, cols, biome);
 
     const near = ridgeHeights(cols, rows, 0.7, 0.97, biome);
-    paintRidge(grid, near, cols, rows, "near", "#");
+    paintRidge(grid, near, cols, rows, "near", ["#"]);
     if (biome.snowCaps) paintSnowCaps(grid, near, cols, rows);
     paintVegetation(grid, near, cols, biome);
 
@@ -438,8 +486,14 @@
     font-weight: 600;
   }
 
-  .ascii-landscape-art :global(.L-far) { color: var(--land-far); }
-  .ascii-landscape-art :global(.L-mid) { color: var(--land-mid); }
+  .ascii-landscape-art :global(.L-far) {
+    color: var(--land-far);
+    animation: wx-shimmer-far 7s ease-in-out infinite;
+  }
+  .ascii-landscape-art :global(.L-mid) {
+    color: var(--land-mid);
+    animation: wx-shimmer-mid 9s ease-in-out infinite;
+  }
   .ascii-landscape-art :global(.L-near) { color: var(--land-near); }
   .ascii-landscape-art :global(.L-veg) { color: var(--land-veg); }
   .ascii-landscape-art :global(.L-snow) { color: var(--land-snow); }
@@ -557,5 +611,18 @@
   @keyframes wx-tumble {
     from { left: -6%; transform: rotate(0deg); }
     to { left: 106%; transform: rotate(1080deg); }
+  }
+
+  /* Gentle atmospheric breathing on the two background layers — subtle,
+     and deliberately not synced (different durations) so it doesn't
+     read as a single flat pulse. */
+  @keyframes wx-shimmer-far {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  @keyframes wx-shimmer-mid {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.75; }
   }
 </style>
