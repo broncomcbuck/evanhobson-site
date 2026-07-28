@@ -415,6 +415,31 @@ html, body {
   color: var(--text) !important;
 }
 
+/* ===== Paper-grain texture =====
+   A very faint noise texture (SVG feTurbulence, inlined as a data URI —
+   no image asset needed) over the base page color, so the whole site
+   reads a little more like paper/print than a flat digital surface.
+   Two variants: dark flecks on the light paper background, light
+   flecks on the dark background. Both bake their own alpha down to
+   ~0.05-0.06 inside the SVG's feColorMatrix, so no extra CSS opacity
+   is layered on top (that stacking mistake already bit the contour
+   texture on the homepage cards once — the fix there was the same:
+   let the asset's own faintness do the work, don't compound it).
+*/
+html, body {
+  background:
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27180%27%20height%3D%27180%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.85%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27matrix%27%20values%3D%270%200%200%200%200%20%200%200%200%200%200%20%200%200%200%200%200%20%200%200%200%200.05%200%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27%2F%3E%3C%2Fsvg%3E") repeat,
+    var(--bg) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body {
+  background:
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27180%27%20height%3D%27180%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.85%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27matrix%27%20values%3D%270%200%200%200%201%20%200%200%200%200%201%20%200%200%200%200%201%20%200%200%200%200.06%200%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27%2F%3E%3C%2Fsvg%3E") repeat,
+    var(--bg) !important;
+}
+
 /* ===== ASCII landscape =====
    Per-biome palettes live scoped to the component itself
    (src/components/AsciiLandscape.astro), keyed off [data-biome].
