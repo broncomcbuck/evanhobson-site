@@ -420,5 +420,7 @@ html, body {
    scoping doesn't correctly handle :global() nested inside :has().
 */
 main:has(.ascii-landscape) + .site-footer {
-  margin-top: 0;
+  /* Close, but not zero — a small buffer so the footer text doesn't
+     sit directly against the art's solid ground fill. */
+  margin-top: 1.1rem;
 }
