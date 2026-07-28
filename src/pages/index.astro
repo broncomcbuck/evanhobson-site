@@ -102,6 +102,38 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       background: var(--surface);
       border: 1px solid var(--border);
       box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    /* Faint topo-contour texture on the two homepage "front door" cards —
+       ties the site's identity to actual field-cartography conventions
+       rather than generic decoration. Sits behind the real content via
+       a negative z-index within the card's own stacking context (the
+       card itself already has position:relative from global.css). */
+    .hero-inner::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background-image: url("/contours/contours-soft.svg");
+      background-size: cover;
+      background-position: center;
+      /* the SVG's own strokes are already faint (0.12 internal opacity) —
+         this is a mild extra dial-down, not a second faintness pass */
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .start-inner::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background-image: url("/contours/contours-soft.svg");
+      background-size: cover;
+      background-position: center;
+      opacity: 0.9;
+      pointer-events: none;
     }
 
     .hero-grid {
@@ -180,6 +212,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       background: var(--surface);
       border: 1px solid var(--border);
       box-shadow: var(--shadow);
+      overflow: hidden;
     }
 
     .start-head h2 {

@@ -244,6 +244,7 @@ body {
 :root {
   --font-serif: "Literata", Georgia, serif;
   --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
 
   --r-lg: 16px;
   --r-xl: 22px;
@@ -363,6 +364,7 @@ h1, h2, h3, h4 {
 .kicker,
 .tag {
   color: var(--muted) !important;
+  font-family: var(--font-mono);
 }
 
 /* Unify all cards/boxes. Also gives every card a stacking context above
