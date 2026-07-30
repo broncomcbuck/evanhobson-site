@@ -624,8 +624,12 @@
 
     const grid: Cell[][] = Array.from({ length: rows }, () => new Array(cols).fill(null));
 
+    // Stars (and the glow marker standing in for them) are a night-sky
+    // detail — skip them in light mode instead of scattering dots and
+    // a stray glowing "O" across a plain daytime sky.
+    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
     const skyMaxFrac = contentFrac * 0.55;
-    paintSky(grid, cols, Math.round(rows * skyMaxFrac));
+    if (isDark) paintSky(grid, cols, Math.round(rows * skyMaxFrac));
 
     // Compute every ridge line up front so each layer's fill can stop
     // exactly where the next, nearer layer begins (see paintRidge).
@@ -715,7 +719,7 @@
      (daytime haze). Dark mode: far darkest / fore lightest (things
      nearer catch more of what light there is). ===== */
   .ascii-landscape[data-biome="pine"] {
-    --land-far: #90a8ae; --land-mid: #5f8a6e; --land-near: #2c5a44; --land-fore: #24401f;
+    --land-far: #a8b49c; --land-mid: #5f8a6e; --land-near: #2c5a44; --land-fore: #24401f;
     --land-veg: #1a7a42; --land-snow: #ffffff; --land-fence: #6b5738;
   }
   .ascii-landscape[data-biome="desert"] {
@@ -723,7 +727,7 @@
     --land-veg: #4a7a2e; --land-snow: transparent; --land-fence: #7a5230;
   }
   .ascii-landscape[data-biome="steppe"] {
-    --land-far: #92a0ac; --land-mid: #a68a4a; --land-near: #6b4f2a; --land-fore: #453518;
+    --land-far: #aba48c; --land-mid: #a68a4a; --land-near: #6b4f2a; --land-fore: #453518;
     --land-veg: #4a7a2e; --land-snow: transparent; --land-fence: #6b5738;
   }
   /* No bare @media (prefers-color-scheme: dark) fallback here —
