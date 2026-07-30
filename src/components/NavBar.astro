@@ -37,8 +37,8 @@ const isActive = (href) => {
   height: var(--nav-h);
   display: flex;
   justify-content: center;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background: var(--paper);
+  border-bottom: 1px solid var(--ink);
   z-index: 5000;
 }
 
@@ -55,29 +55,37 @@ const isActive = (href) => {
 }
 
 .links a {
-  font-weight: 650;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
   text-decoration: none;
-  color: var(--muted);
+  color: var(--ink-2);
   border-bottom: 2px solid transparent;
+  padding-bottom: 2px;
 }
 
 .links a.active {
-  color: var(--text);
-  border-bottom-color: var(--accent);
+  color: var(--ink);
+  font-weight: 700;
+  border-bottom-color: var(--contour);
+}
+
+.links a.active::before {
+  content: "△ ";
+  color: var(--contour);
 }
 
 .theme-toggle {
   background: none;
-  border: 1px solid var(--border);
-  color: var(--text);
+  border: 1px solid var(--ink);
+  color: var(--ink);
   font-size: 1rem;
   line-height: 1;
-  padding: 0.45rem 0.55rem;
-  border-radius: 999px;
+  padding: 0.4rem 0.55rem;
   cursor: pointer;
 }
 
 .theme-toggle:hover {
-  background: var(--surface-2);
+  background: var(--paper-2);
 }
 </style>

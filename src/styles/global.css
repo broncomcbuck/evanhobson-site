@@ -1,22 +1,81 @@
-/* ======================================================= */
-/* GLOBAL BASE STYLES                                      */
-/* ======================================================= */
+/* =======================================================
+   DESIGN TOKENS
+   GPS-telemetry / topo-survey visual identity: warm paper,
+   monospace-forward, hard edges (no radius, no drop shadow),
+   glyph-only accents. Old token names (--bg, --surface, --text,
+   --border, --accent, --shadow, --r-lg, --r-xl, --font-sans) are
+   kept as aliases onto the new palette so existing per-page
+   styles that reference them still work without being rewritten
+   one by one — --shadow resolves to "none" and the radii resolve
+   to 0 specifically so those old rules become harmless no-ops.
+   ======================================================= */
 
 :root {
   --nav-h: 54px;
 
-  /* “paper” palette */
-  --paper-0: #f8f7f4;
-  --paper-1: #f1ede6;
-  --paper-2: #e9e2d7;
+  --paper: #e6dcc0;
+  --paper-2: #ddd0ab;
+  --ink: #241f18;
+  --ink-2: #564c3c;
+  --contour: #8a5a34;
+  --wood: #57684a;
+  --water: #3f7186;
+  --line: #b9a97d;
 
-  --ink: #2a1b0f;
-  --muted: #4a4036;
+  --font-serif: Charter, "Iowan Old Style", Georgia, "Palatino Linotype", serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
-  --card: rgba(255, 255, 255, 0.92);
-  --card-border: rgba(0, 0, 0, 0.06);
-  --shadow: 0 20px 45px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.06);
+  /* aliases for the old token names still referenced by per-page styles */
+  --bg: var(--paper-2);
+  --surface: var(--paper);
+  --surface-2: var(--paper-2);
+  --text: var(--ink);
+  --text-2: var(--ink-2);
+  --muted: var(--ink-2);
+  --border: var(--line);
+  --accent: var(--water);
+  --shadow: none;
+  --r-lg: 0px;
+  --r-xl: 0px;
+  --font-sans: var(--font-serif);
 }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #14130d;
+    --paper-2: #1c1a11;
+    --ink: #e8ddc0;
+    --ink-2: #b3a888;
+    --contour: #c98a54;
+    --wood: #8aa374;
+    --water: #6fabc2;
+    --line: #322e1e;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #14130d;
+  --paper-2: #1c1a11;
+  --ink: #e8ddc0;
+  --ink-2: #b3a888;
+  --contour: #c98a54;
+  --wood: #8aa374;
+  --water: #6fabc2;
+  --line: #322e1e;
+}
+:root[data-theme="light"] {
+  --paper: #e6dcc0;
+  --paper-2: #ddd0ab;
+  --ink: #241f18;
+  --ink-2: #564c3c;
+  --contour: #8a5a34;
+  --wood: #57684a;
+  --water: #3f7186;
+  --line: #b9a97d;
+}
+
+/* ======================================================= */
+/* RESET / BASE                                             */
+/* ======================================================= */
 
 html,
 body {
@@ -25,81 +84,116 @@ body {
   height: 100%;
 }
 
-body {
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  color: var(--ink);
-
-  /* ✅ Professional “paper” background (not plain white) */
-  background:
-    radial-gradient(1200px 700px at 20% 10%, rgba(163, 109, 58, 0.08), transparent 60%),
-    radial-gradient(900px 600px at 80% 30%, rgba(111, 143, 114, 0.08), transparent 55%),
-    linear-gradient(to bottom, var(--paper-2) 0%, var(--paper-1) 40%, var(--paper-0) 100%);
-
-  line-height: 1.65;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  /* ✅ fixes “content under navbar” everywhere */
-  padding-top: var(--nav-h);
-}
-
-/* Box sizing sanity */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
-/* Media defaults */
 img,
 svg {
   max-width: 100%;
   display: block;
 }
 
-/* Code / ASCII safety */
 pre {
   white-space: pre;
-  font-family: monospace;
+  font-family: var(--font-mono);
   margin: 0;
 }
 
-/* Generic container */
+body {
+  background: var(--paper-2);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding-top: var(--nav-h);
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--water) 35%, transparent);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--ink);
+}
+
+p,
+li {
+  color: var(--ink-2);
+}
+
+:target {
+  scroll-margin-top: calc(var(--nav-h) + 18px);
+}
+
 .container {
   width: min(1100px, calc(100% - 3rem));
   margin-inline: auto;
 }
 
-/* ======================================================= */
-/* Progressive enhancement for SnapLayout animations       */
-/* - Without JS: content is visible                        */
-/* - With JS: we fade/slide in via .visible toggles        */
-/* ======================================================= */
-
-html.js .content {
-  opacity: 0;
-  transform: translateY(18px);
-  transition: opacity 0.65s ease, transform 0.8s ease;
+/* ===== Paper-grain texture — a very faint noise texture (SVG
+   feTurbulence, inlined as a data URI) over the base page color, so
+   the whole site reads a little more like paper/print than a flat
+   digital surface. Two variants: dark flecks on the light paper,
+   light flecks on the dark paper. Both bake their own alpha down to
+   ~0.05-0.06 inside the SVG's feColorMatrix, so no extra CSS opacity
+   is layered on top. ===== */
+html,
+body {
+  background:
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27180%27%20height%3D%27180%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.85%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27matrix%27%20values%3D%270%200%200%200%200%20%200%200%200%200%200%20%200%200%200%200%200%20%200%200%200%200.05%200%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27%2F%3E%3C%2Fsvg%3E") repeat,
+    var(--paper-2);
+}
+:root[data-theme="dark"] html,
+:root[data-theme="dark"] body,
+html[data-theme="dark"],
+html[data-theme="dark"] body {
+  background:
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27180%27%20height%3D%27180%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.85%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27matrix%27%20values%3D%270%200%200%200%201%20%200%200%200%200%201%20%200%200%200%200%201%20%200%200%200%200.06%200%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27%2F%3E%3C%2Fsvg%3E") repeat,
+    var(--paper-2);
+}
+@media (prefers-color-scheme: dark) {
+  html,
+  body {
+    background:
+      url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27180%27%20height%3D%27180%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.85%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27matrix%27%20values%3D%270%200%200%200%201%20%200%200%200%200%201%20%200%200%200%200%201%20%200%200%200%200.06%200%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27%2F%3E%3C%2Fsvg%3E") repeat,
+      var(--paper-2);
+  }
+}
+:root[data-theme="light"] html,
+:root[data-theme="light"] body {
+  background:
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27180%27%20height%3D%27180%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.85%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27matrix%27%20values%3D%270%200%200%200%200%20%200%200%200%200%200%20%200%200%200%200%200%20%200%200%200%200.05%200%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27%2F%3E%3C%2Fsvg%3E") repeat,
+    var(--paper-2);
 }
 
-html.js .content.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* ===== Content Pages (Research / Projects / Writing) ===== */
+/* ======================================================= */
+/* CONTENT PAGES (About / Research / Projects / Writing)    */
+/* ======================================================= */
 
 .page {
   width: min(900px, calc(100% - 3rem));
   margin: 0 auto;
   padding: clamp(2.5rem, 5vw, 4rem) 0;
+  position: relative;
+  z-index: 2;
 }
 
 .page h1 {
-  font-family: "Literata", Georgia, serif;
+  font-family: var(--font-serif);
   font-size: clamp(2.1rem, 3.5vw, 2.8rem);
   margin: 0 0 0.75rem;
-  color: #2d241b;
+  color: var(--ink);
 }
 
 .page .intro {
@@ -107,33 +201,31 @@ html.js .content.visible {
   margin: 0 0 2rem;
   font-size: 1.08rem;
   line-height: 1.75;
-  color: var(--muted);
+  color: var(--ink-2);
 }
 
 .list {
   display: grid;
-  gap: 1.4rem;
+  gap: 1.1rem;
 }
 
 .item {
   padding: 1.25rem 1.3rem 1.35rem;
-  border-radius: 18px;
-  background: rgba(255,255,255,0.85);
-  border: 1px solid rgba(0,0,0,0.06);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+  background: var(--paper);
+  border: 1px solid var(--ink);
 }
 
 .item h2 {
-  font-family: "Literata", Georgia, serif;
+  font-family: var(--font-serif);
   font-size: 1.35rem;
   margin: 0 0 0.5rem;
-  color: #2d241b;
+  color: var(--ink);
 }
 
 .item p {
   margin: 0 0 0.5rem;
   line-height: 1.7;
-  color: rgba(45,36,27,0.80);
+  color: var(--ink-2);
 }
 
 .item p:last-of-type {
@@ -141,313 +233,86 @@ html.js .content.visible {
 }
 
 .item .meta {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: rgba(45,36,27,0.60);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
 }
 
 .item a {
   display: inline-block;
   margin-top: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
   font-weight: 700;
   text-decoration: none;
-  color: rgba(45,36,27,0.95);
-  border-bottom: 1px solid rgba(0,0,0,0.25);
+  color: var(--water);
+  border-bottom: 1px solid color-mix(in oklab, var(--water) 45%, transparent);
 }
 
 .item a:hover {
-  border-bottom-color: rgba(0,0,0,0.45);
+  border-bottom-color: var(--water);
 }
 
-/* ===== Essay helpers (anchors + selection) ===== */
-:target { scroll-margin-top: calc(var(--nav-h) + 18px); }
+/* ======================================================= */
+/* ESSAY PAGES                                              */
+/* ======================================================= */
 
-/* ===== Unified site background (disable stripes) ===== */
-html, body {
-  background: #f2eee6;
-  background-image: none !important;
-}
-
-
-
-:root {
-  /* typography */
-  --font-serif: "Literata", Georgia, serif;
-  --font-sans: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-
-  /* radii */
-  --r-lg: 16px;
-  --r-xl: 22px;
-
-  /* light theme */
-  --bg: #f3efe7;
-  --surface: #fbfaf7;
-  --surface-2: #f6f3ec;
-  --text: #1d1b16;
-  --text-2: rgba(29,27,22,0.82);
-  --muted: rgba(29,27,22,0.62);
-  --border: rgba(29,27,22,0.12);
-
-  /* accent: slightly sharper green/earth */
-  --accent: #6f8f72;
-
-  /* shadows: crisper, less fog */
-  --shadow: 0 14px 34px rgba(0,0,0,0.12);
-}
-
-/* Universal dark mode */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0f1113;
-    --surface: #14171a;
-    --surface-2: #191d21;
-    --text: #f2f3f4;
-    --text-2: rgba(242,243,244,0.84);
-    --muted: rgba(242,243,244,0.64);
-    --border: rgba(242,243,244,0.14);
-    --accent: #88b58e; /* brighter in dark */
-    --shadow: 0 16px 38px rgba(0,0,0,0.45);
-  }
-}
-
-/* Apply tokens globally */
-html, body {
-  background: var(--bg) !important;
-  color: var(--text);
-  font-family: var(--font-sans);
-}
-
-a { color: inherit; }
-
-/* Improve contrast of default text elements */
-p, li {
-  color: var(--text-2);
-}
-
-/* Make headings crisp */
-h1, h2, h3, h4 {
-  color: var(--text);
-}
-
-/* Inputs/selection (optional but helps polish) */
-::selection {
-  background: color-mix(in oklab, var(--accent) 30%, transparent);
-}
-
-/* Ensure any old background images/patterns don’t cause striping */
-body {
-  background-image: none !important;
-}
-
-
-
-:root {
-  --font-serif: "Literata", Georgia, serif;
-  --font-sans: "Inter", system-ui, sans-serif;
-  --font-mono: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
-
-  --r-lg: 16px;
-  --r-xl: 22px;
-
-  --bg: #f3efe7;
-  --surface: #fbfaf7;
-  --surface-2: #f6f3ec;
-  --text: #1d1b16;
-  --text-2: rgba(29,27,22,0.82);
-  --muted: rgba(29,27,22,0.62);
-  --border: rgba(29,27,22,0.12);
-  --accent: #6f8f72;
-  --shadow: 0 14px 34px rgba(0,0,0,0.12);
-}
-
-/* DARK MODE */
-[data-theme="dark"] {
-  --bg: #0f1113;
-  --surface: #14171a;
-  --surface-2: #191d21;
-  --text: #f2f3f4;
-  --text-2: rgba(242,243,244,0.84);
-  --muted: rgba(242,243,244,0.64);
-  --border: rgba(242,243,244,0.14);
-  --accent: #88b58e;
-  --shadow: 0 16px 38px rgba(0,0,0,0.45);
-}
-
-html, body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-sans);
-}
-
-a { color: inherit; }
-
-::selection {
-  background: color-mix(in oklab, var(--accent) 35%, transparent);
-}
-
-/* ===== THEME TOKENS (manual toggle, high contrast) ===== */
-
-/* LIGHT MODE */
-[data-theme="light"] {
-  --bg: #f5f7fa;            /* neutral light gray */
-  --surface: #ffffff;      /* cards / panels */
-  --surface-2: #f0f2f5;    /* subtle contrast */
-  --text: #0f172a;         /* near-black */
-  --text-2: #334155;       /* slate */
-  --muted: #64748b;        /* cool gray */
-  --border: rgba(15,23,42,0.12);
-
-  /* accent: restrained sage/steel */
-  --accent: #4f766a;
-
-  --shadow: 0 12px 28px rgba(15,23,42,0.12);
-}
-
-/* DARK MODE */
-[data-theme="dark"] {
-  --bg: #0b0f14;            /* deep ink */
-  --surface: #121821;      /* panels */
-  --surface-2: #18202c;    /* hover / alt */
-  --text: #e5e7eb;         /* near-white */
-  --text-2: #cbd5e1;       /* light slate */
-  --muted: #94a3b8;
-  --border: rgba(226,232,240,0.14);
-
-  --accent: #7fb3a3;       /* brighter in dark */
-
-  --shadow: 0 18px 42px rgba(0,0,0,0.55);
-}
-
-/* GLOBAL APPLICATION */
-html, body {
-  background: var(--bg);
-  color: var(--text);
-}
-
-p, li {
-  color: var(--text-2);
-}
-
-a {
-  color: inherit;
-}
-
-/* headings should snap */
-h1, h2, h3, h4 {
-  color: var(--text);
-}
-
-/* selection */
-::selection {
-  background: color-mix(in oklab, var(--accent) 35%, transparent);
-}
-
-/* ===== DARK MODE OVERRIDES (cards, pages) =====
-   These override earlier “light-only” blocks that used hard-coded rgba/hex colors.
-   Keep this near the end of global.css so it wins the cascade.
-*/
-
-.page h1,
-.item h2,
-.item h3,
-.start-head h2 {
-  color: var(--text) !important;
-}
-
-.page .intro,
-.item p,
-.start-head p {
-  color: var(--text-2) !important;
-}
-
-.item .meta,
-.kicker,
-.tag {
-  color: var(--muted) !important;
-  font-family: var(--font-mono);
-}
-
-/* Unify all cards/boxes. Also gives every card a stacking context above
-   the ASCII landscape (which now appears on every page, right before
-   the footer) so its slight negative-margin overlap never obscures
-   card content, on any page. */
-.item,
-.hero-inner,
-.start-inner,
-.card,
 .essay-header,
-.essay-body,
-.essay-block,
-.essay-toc {
+.essay-body {
   position: relative;
   z-index: 2;
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  box-shadow: var(--shadow) !important;
+  background: var(--paper);
+  border: 1px solid var(--ink);
 }
 
-/* Secondary surfaces used by some cards */
-.card {
-  background: var(--surface-2) !important;
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  font-weight: 700;
 }
 
-/* Links inside cards */
-.item a,
+.tag {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+  padding: 0.22rem 0.5rem;
+}
+
+.start-head h2 {
+  color: var(--ink);
+}
+
+.start-head p {
+  color: var(--ink-2);
+}
+
 .textlink,
 .go,
 .back,
 .essay-link {
-  color: var(--text) !important;
-  border-bottom-color: color-mix(in oklab, var(--text) 28%, transparent) !important;
+  color: var(--water) !important;
+  border-bottom-color: color-mix(in oklab, var(--water) 45%, transparent) !important;
 }
 
-.item a:hover,
 .textlink:hover,
 .go:hover,
 .back:hover,
 .essay-link:hover {
-  border-bottom-color: color-mix(in oklab, var(--accent) 55%, transparent) !important;
+  border-bottom-color: var(--water) !important;
 }
 
-/* Ensure body/page background always follows theme */
-html, body {
-  background: var(--bg) !important;
-  color: var(--text) !important;
-}
-
-/* ===== Paper-grain texture =====
-   A very faint noise texture (SVG feTurbulence, inlined as a data URI —
-   no image asset needed) over the base page color, so the whole site
-   reads a little more like paper/print than a flat digital surface.
-   Two variants: dark flecks on the light paper background, light
-   flecks on the dark background. Both bake their own alpha down to
-   ~0.05-0.06 inside the SVG's feColorMatrix, so no extra CSS opacity
-   is layered on top (that stacking mistake already bit the contour
-   texture on the homepage cards once — the fix there was the same:
-   let the asset's own faintness do the work, don't compound it).
-*/
-html, body {
-  background:
-    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27180%27%20height%3D%27180%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.85%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27matrix%27%20values%3D%270%200%200%200%200%20%200%200%200%200%200%20%200%200%200%200%200%20%200%200%200%200.05%200%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27%2F%3E%3C%2Fsvg%3E") repeat,
-    var(--bg) !important;
-  color: var(--text) !important;
-}
-
-html[data-theme="dark"],
-html[data-theme="dark"] body {
-  background:
-    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27180%27%20height%3D%27180%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.85%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27matrix%27%20values%3D%270%200%200%200%201%20%200%200%200%200%201%20%200%200%200%200%201%20%200%200%200%200.06%200%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27%2F%3E%3C%2Fsvg%3E") repeat,
-    var(--bg) !important;
-}
-
-/* ===== ASCII landscape =====
-   Per-biome palettes live scoped to the component itself
-   (src/components/AsciiLandscape.astro), keyed off [data-biome].
-   This lives here, unscoped, because Astro's component-level CSS
-   scoping doesn't correctly handle :global() nested inside :has().
-*/
-main:has(.ascii-landscape) + .site-footer {
-  /* Close, but not zero — a small buffer so the footer text doesn't
-     sit directly against the art's solid ground fill. */
-  margin-top: 1.1rem;
-}
+/* ======================================================= */
+/* ASCII landscape — palette lives scoped to the component
+   itself (src/components/AsciiLandscape.astro), keyed off
+   [data-biome]. Layout/positioning rules live there too, since
+   the component now owns a single full-page absolute scene
+   rather than an in-flow footer strip.
+   ======================================================= */

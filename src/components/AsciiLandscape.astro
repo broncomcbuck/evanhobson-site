@@ -1,11 +1,16 @@
 ---
-// Procedurally generated ASCII landscape, regenerated on every load/resize.
-// Picks a random biome (pine / desert / steppe) each time, each with its
-// own terrain-shape math, vegetation, and CSS palette (data-biome attr).
-// Single merged character grid so nearer ridges properly occlude farther
-// ones (no overlapping/garbled glyphs from independently stacked layers).
-// No background — only the glyphs themselves carry color, the page's own
-// background shows through everywhere else.
+// One continuous procedurally generated ASCII scene spanning the
+// entire page: sky/stars at the top, descending through far/mid/near/
+// fore terrain bands to a dense vegetation + wildlife ground band at
+// the bottom. Absolutely positioned (inset:0) inside BaseLayout's
+// .page-wrap, which is sized by real page content plus a reserved
+// .ground-space spacer — see BaseLayout.astro. Regenerated on every
+// load/resize; picks a random biome (pine / desert / steppe) each
+// time, each with its own terrain-shape math, vegetation, and CSS
+// palette (data-biome attr). Single merged character grid so nearer
+// ridges properly occlude farther ones. No background — only the
+// glyphs themselves carry color, the page's own background shows
+// through everywhere else.
 ---
 
 <div class="ascii-landscape" id="ascii-landscape" aria-hidden="true">
@@ -14,17 +19,9 @@
 </div>
 
 <script>
-  function rand(min: number, max: number) {
-    return Math.random() * (max - min) + min;
-  }
-
-  function pick<T>(arr: T[]): T {
-    return arr[Math.floor(Math.random() * arr.length)];
-  }
-
   type Cell = { ch: string; layer: string } | null;
-
-  type WeatherKind = "birds" | "tumbleweed";
+  type WeatherKind = "birds" | "leaves" | "cloud";
+  type VegShape = { dx: number; dy: number; ch: string }[];
 
   type Biome = {
     name: string;
@@ -32,31 +29,28 @@
     waveCount: number;
     freqRange: [number, number];
     ampScale: number;
-    // extra amplitude multiplier applied only to the far/mid layers, on
-    // top of ampScale — lets a biome (desert) have a flatter horizon
-    // without flattening its own foreground dunes
     farMidFlatten: number;
-    // weighted fill-character sets for the two background layers (mostly
-    // the first character, occasional variety mixed in for texture
-    // instead of a flat solid block)
     farFill: string[];
     midFill: string[];
-    // sparse single-glyph accents scattered along the mid ridge line
+    foreFill: string[];
     midDetailChar: string;
     midDetailDensity: number;
-    veg: "tree" | "cactus" | "shrub";
+    veg: "tree" | "shrub" | "cactus";
     vegDensity: number;
     snowCaps: boolean;
     grazer: boolean;
-    // recurring transient events (birds flying through, a tumbleweed
-    // rolling past) — these keep re-rolling for as long as the page
-    // is open
+    fence: boolean;
     weather: WeatherKind[];
-    // persistent whole-scene precipitation — decided ONCE per page
-    // load/reload; if it's on, it stays on for the whole visit, no
-    // in-between fading in and out
     precip: "snow" | "rain" | null;
   };
+
+  function rand(min: number, max: number) {
+    return Math.random() * (max - min) + min;
+  }
+
+  function pick<T>(arr: T[]): T {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
 
   const BIOMES: Biome[] = [
     {
@@ -68,13 +62,15 @@
       farMidFlatten: 1,
       farFill: [".", ".", ".", "'"],
       midFill: [":", ":", ":", "-"],
+      foreFill: [",", ",", "'", "."],
       midDetailChar: "^",
-      midDetailDensity: 0.06,
+      midDetailDensity: 0.07,
       veg: "tree",
-      vegDensity: 0.17,
+      vegDensity: 0.22,
       snowCaps: true,
       grazer: false,
-      weather: ["birds"],
+      fence: false,
+      weather: ["birds", "leaves", "cloud"],
       precip: "snow",
     },
     {
@@ -86,13 +82,15 @@
       farMidFlatten: 0.45,
       farFill: ["~", "~", "~", "."],
       midFill: ["~", "~", "~", ":"],
+      foreFill: [".", ",", "~", "."],
       midDetailChar: "o",
-      midDetailDensity: 0.05,
+      midDetailDensity: 0.06,
       veg: "cactus",
-      vegDensity: 0.07,
+      vegDensity: 0.1,
       snowCaps: false,
       grazer: false,
-      weather: ["birds", "tumbleweed"],
+      fence: false,
+      weather: ["birds", "cloud"],
       precip: null,
     },
     {
@@ -104,20 +102,22 @@
       farMidFlatten: 1,
       farFill: [".", ".", ".", "'"],
       midFill: [":", ":", ":", "-"],
+      foreFill: [",", ",", "'", ";"],
       midDetailChar: "'",
-      midDetailDensity: 0.07,
+      midDetailDensity: 0.08,
       veg: "shrub",
-      vegDensity: 0.22,
+      vegDensity: 0.27,
       snowCaps: false,
       grazer: true,
-      weather: ["birds"],
+      fence: true,
+      weather: ["birds", "leaves", "cloud"],
       precip: "rain",
     },
   ];
 
   // Sum of a few sine waves. Plain sine sum -> smooth rolling terrain.
-  // "Ridged" sum (1 - |sin|) per octave -> sharp cusped peaks over flatter
-  // valleys, the standard trick for jagged mountain-like silhouettes.
+  // "Ridged" sum (1 - |sin|) per octave -> sharp cusped peaks over
+  // flatter valleys, the standard trick for jagged mountain silhouettes.
   function makeWaveFn(waveCount: number, ridged: boolean, freqRange: [number, number]) {
     const waves = [];
     for (let i = 0; i < waveCount; i++) {
@@ -156,11 +156,9 @@
       const h = wave(x / cols);
       let top: number;
       if (biome.ridged) {
-        // h in [0,1]: 0 = valley (bandMax), 1 = sharp peak (bandMin)
         const amp = (bandMax - bandMin) * extraAmpScale;
         top = Math.round(bandMax - h * amp);
       } else {
-        // h in ~[-1,1]: symmetric displacement around the band midpoint
         const mid = (bandMin + bandMax) / 2;
         const amp = ((bandMax - bandMin) / 2) * biome.ampScale * extraAmpScale;
         top = Math.round(mid - h * amp);
@@ -171,16 +169,20 @@
     return heights;
   }
 
-  // fillChars is a weighted set (repeat a character to make it more
-  // common) rather than one flat character — gives the fill a bit of
-  // dithered texture instead of a solid uniform block.
+  // bottomBound (optional, per-column) stops the fill where the next
+  // nearer layer is going to start, instead of always filling all the
+  // way to the bottom of the grid — each layer only ever paints the
+  // slice of rows it actually keeps, not the parts every closer layer
+  // is about to overwrite anyway (roughly a 4x reduction in cell
+  // writes for a 4-layer scene).
   function paintRidge(
     grid: Cell[][],
     ridge: number[],
     cols: number,
     rows: number,
     layer: string,
-    fillChars: string[]
+    fillChars: string[],
+    bottomBound?: number[]
   ) {
     for (let x = 0; x < cols; x++) {
       const top = ridge[x];
@@ -189,15 +191,13 @@
       if (top < prev) edge = "/";
       else if (top > prev) edge = "\\";
 
-      for (let y = top; y < rows; y++) {
+      const limit = bottomBound ? Math.min(rows, bottomBound[x]) : rows;
+      for (let y = top; y < limit; y++) {
         grid[y][x] = { ch: y === top ? edge : pick(fillChars), layer };
       }
     }
   }
 
-  // Sparse single-glyph accents along the mid ridge — a receding
-  // treeline/rockline/grass-tuft suggestion, kept in the mid layer's own
-  // color so the far < mid < near depth ordering stays unambiguous.
   function paintMidDetail(grid: Cell[][], ridge: number[], cols: number, biome: Biome) {
     const minGap = Math.max(4, Math.floor(cols / (biome.midDetailDensity * 90)));
     let lastX = -minGap;
@@ -221,59 +221,165 @@
     }
   }
 
-  // Multi-row vegetation glyphs, one style per biome. Painted after (and so
-  // on top of) the ridge, overwriting its edge/fill chars at those cells.
-  function paintVegetation(
-    grid: Cell[][],
-    ridge: number[],
-    cols: number,
-    biome: Biome
-  ) {
-    const minGap = Math.max(6, Math.floor(cols / (biome.vegDensity * 60)));
+  // Evenly spaced fence posts with a top rail — a quick, legible
+  // "this is grazing rangeland" marker along the foreground band.
+  function paintFence(grid: Cell[][], ridge: number[], cols: number) {
+    if (Math.random() > 0.5) return;
+    const postGap = Math.max(5, Math.floor(cols / rand(14, 22)));
+    const startX = Math.floor(rand(2, postGap));
+    let lastPostX: number | null = null;
+    for (let x = startX; x < cols - 2; x += postGap) {
+      const top = ridge[x];
+      if (top - 2 < 0) continue;
+      grid[top - 2][x] = { ch: "|", layer: "fence" };
+      grid[top - 1][x] = { ch: "|", layer: "fence" };
+      if (lastPostX !== null) {
+        for (let rx = lastPostX + 1; rx < x; rx++) {
+          const rTop = ridge[rx];
+          if (rTop - 1 >= 0 && grid[rTop - 1][rx] === null) {
+            grid[rTop - 1][rx] = { ch: "-", layer: "fence" };
+          }
+        }
+      }
+      lastPostX = x;
+    }
+  }
+
+  // ===== Vegetation: several genuinely different species per biome
+  // (not size variants of one silhouette), each a list of {dx, dy, ch}
+  // offsets from the ground point (dy negative = upward), with mixed
+  // texture characters rather than one uniform fill glyph so canopies/
+  // bodies read as organic, not a solid block.
+  const MATURE_PINE: VegShape = [
+    { dx: 0, dy: -5, ch: "^" },
+    { dx: -1, dy: -4, ch: "/" }, { dx: 0, dy: -4, ch: "'" }, { dx: 1, dy: -4, ch: "\\" },
+    { dx: -2, dy: -3, ch: "/" }, { dx: -1, dy: -3, ch: "#" }, { dx: 0, dy: -3, ch: "^" }, { dx: 1, dy: -3, ch: "#" }, { dx: 2, dy: -3, ch: "\\" },
+    { dx: -2, dy: -2, ch: "#" }, { dx: -1, dy: -2, ch: "'" }, { dx: 0, dy: -2, ch: "#" }, { dx: 1, dy: -2, ch: "'" }, { dx: 2, dy: -2, ch: "#" },
+    { dx: -3, dy: -1, ch: "/" }, { dx: -2, dy: -1, ch: "#" }, { dx: -1, dy: -1, ch: "#" }, { dx: 0, dy: -1, ch: "#" }, { dx: 1, dy: -1, ch: "#" }, { dx: 2, dy: -1, ch: "#" }, { dx: 3, dy: -1, ch: "\\" },
+    { dx: 0, dy: 0, ch: "|" },
+  ];
+  const YOUNG_PINE: VegShape = [
+    { dx: 0, dy: -2, ch: "^" },
+    { dx: -1, dy: -1, ch: "/" }, { dx: 0, dy: -1, ch: "#" }, { dx: 1, dy: -1, ch: "\\" },
+    { dx: 0, dy: 0, ch: "|" },
+  ];
+  const WIND_PINE: VegShape = [
+    { dx: 1, dy: -3, ch: "^" },
+    { dx: 0, dy: -2, ch: "/" }, { dx: 1, dy: -2, ch: "#" }, { dx: 2, dy: -2, ch: "~" },
+    { dx: -1, dy: -1, ch: "_" }, { dx: 0, dy: -1, ch: "#" }, { dx: 1, dy: -1, ch: "#" }, { dx: 2, dy: -1, ch: "#" }, { dx: 3, dy: -1, ch: "~" },
+    { dx: 0, dy: 0, ch: "|" },
+  ];
+  const ASPEN: VegShape = [
+    { dx: -1, dy: -3, ch: "o" }, { dx: 0, dy: -3, ch: "o" }, { dx: 1, dy: -3, ch: "o" },
+    { dx: -2, dy: -2, ch: "o" }, { dx: -1, dy: -2, ch: "@" }, { dx: 0, dy: -2, ch: "@" }, { dx: 1, dy: -2, ch: "@" }, { dx: 2, dy: -2, ch: "o" },
+    { dx: -1, dy: -1, ch: "@" }, { dx: 0, dy: -1, ch: "@" }, { dx: 1, dy: -1, ch: "@" },
+    { dx: 0, dy: 0, ch: "|" },
+  ];
+  const DEAD_SNAG: VegShape = [
+    { dx: 0, dy: -2, ch: "|" },
+    { dx: 1, dy: -1, ch: "/" }, { dx: 0, dy: -1, ch: "|" }, { dx: -1, dy: -1, ch: "`" },
+    { dx: 0, dy: 0, ch: "|" },
+  ];
+
+  const SAGE_MOUND: VegShape = [
+    { dx: -1, dy: -2, ch: "*" }, { dx: 0, dy: -2, ch: "*" }, { dx: 1, dy: -2, ch: "*" },
+    { dx: -2, dy: -1, ch: "o" }, { dx: -1, dy: -1, ch: "@" }, { dx: 0, dy: -1, ch: "'" }, { dx: 1, dy: -1, ch: "@" }, { dx: 2, dy: -1, ch: "o" },
+    { dx: -1, dy: 0, ch: "'" }, { dx: 0, dy: 0, ch: "@" }, { dx: 1, dy: 0, ch: "'" },
+  ];
+  const RABBITBRUSH: VegShape = [
+    { dx: 0, dy: -3, ch: "^" }, { dx: 1, dy: -3, ch: "'" },
+    { dx: -1, dy: -2, ch: "|" }, { dx: 0, dy: -2, ch: "^" }, { dx: 1, dy: -2, ch: "|" }, { dx: 2, dy: -2, ch: "'" },
+    { dx: -2, dy: -1, ch: "'" }, { dx: -1, dy: -1, ch: "|" }, { dx: 0, dy: -1, ch: "@" }, { dx: 1, dy: -1, ch: "|" }, { dx: 2, dy: -1, ch: "@" }, { dx: 3, dy: -1, ch: "'" },
+    { dx: -1, dy: 0, ch: "@" }, { dx: 0, dy: 0, ch: "@" }, { dx: 1, dy: 0, ch: "@" },
+  ];
+  const BUNCHGRASS: VegShape = [
+    { dx: -2, dy: -1, ch: "'" }, { dx: -1, dy: -1, ch: "|" }, { dx: 0, dy: -1, ch: "\"" }, { dx: 1, dy: -1, ch: "|" }, { dx: 2, dy: -1, ch: "'" },
+    { dx: -1, dy: 0, ch: "," }, { dx: 0, dy: 0, ch: "," }, { dx: 1, dy: 0, ch: "," },
+  ];
+  const CREEPING_SHRUB: VegShape = [
+    { dx: -3, dy: -1, ch: "'" }, { dx: -2, dy: -1, ch: "o" }, { dx: -1, dy: -1, ch: "@" }, { dx: 0, dy: -1, ch: "@" }, { dx: 1, dy: -1, ch: "@" }, { dx: 2, dy: -1, ch: "o" }, { dx: 3, dy: -1, ch: "'" },
+    { dx: -2, dy: 0, ch: "," }, { dx: -1, dy: 0, ch: "," }, { dx: 0, dy: 0, ch: "," }, { dx: 1, dy: 0, ch: "," }, { dx: 2, dy: 0, ch: "," },
+  ];
+  const WILDFLOWER: VegShape = [
+    { dx: 0, dy: -1, ch: "*" },
+    { dx: 0, dy: 0, ch: "|" },
+  ];
+  const LOW_TUFT: VegShape = [
+    { dx: -1, dy: 0, ch: "'" }, { dx: 0, dy: 0, ch: "\"" }, { dx: 1, dy: 0, ch: "'" },
+  ];
+
+  const SAGUARO: VegShape = [
+    { dx: -1, dy: -2, ch: "\\" }, { dx: 0, dy: -2, ch: "|" }, { dx: 1, dy: -2, ch: "/" },
+    { dx: 0, dy: -1, ch: "|" },
+    { dx: 0, dy: 0, ch: "|" },
+  ];
+  const BIG_SAGUARO: VegShape = [
+    { dx: 0, dy: -3, ch: "|" },
+    { dx: -2, dy: -2, ch: "\\" }, { dx: -1, dy: -2, ch: "|" }, { dx: 0, dy: -2, ch: "|" }, { dx: 1, dy: -2, ch: "|" }, { dx: 2, dy: -2, ch: "/" },
+    { dx: -2, dy: -1, ch: "|" }, { dx: 0, dy: -1, ch: "|" }, { dx: 2, dy: -1, ch: "|" },
+    { dx: 0, dy: 0, ch: "|" },
+  ];
+  const OCOTILLO: VegShape = [
+    { dx: -2, dy: -4, ch: "'" }, { dx: 2, dy: -4, ch: "'" },
+    { dx: -2, dy: -3, ch: "|" }, { dx: -1, dy: -3, ch: "'" }, { dx: 1, dy: -3, ch: "'" }, { dx: 2, dy: -3, ch: "|" },
+    { dx: -2, dy: -2, ch: "|" }, { dx: -1, dy: -2, ch: "|" }, { dx: 0, dy: -2, ch: "'" }, { dx: 1, dy: -2, ch: "|" }, { dx: 2, dy: -2, ch: "|" },
+    { dx: -1, dy: -1, ch: "|" }, { dx: 0, dy: -1, ch: "|" }, { dx: 1, dy: -1, ch: "|" },
+    { dx: 0, dy: 0, ch: "Y" },
+  ];
+  const CHOLLA: VegShape = [
+    { dx: -1, dy: -2, ch: "o" }, { dx: 0, dy: -2, ch: "O" }, { dx: 1, dy: -2, ch: "o" },
+    { dx: 0, dy: -1, ch: "8" },
+    { dx: 0, dy: 0, ch: "|" },
+  ];
+  const BARREL_CACTUS: VegShape = [
+    { dx: 0, dy: -1, ch: "O" },
+    { dx: -1, dy: 0, ch: "(" }, { dx: 0, dy: 0, ch: "|" }, { dx: 1, dy: 0, ch: ")" },
+  ];
+  const PAD_CACTUS: VegShape = [
+    { dx: -1, dy: -1, ch: "o" }, { dx: 0, dy: -1, ch: "O" }, { dx: 1, dy: -1, ch: "o" },
+    { dx: -2, dy: 0, ch: "o" }, { dx: -1, dy: 0, ch: "O" }, { dx: 0, dy: 0, ch: "@" }, { dx: 1, dy: 0, ch: "O" }, { dx: 2, dy: 0, ch: "o" },
+  ];
+  const DESERT_SCRUB: VegShape = [
+    { dx: -1, dy: -1, ch: "'" }, { dx: 0, dy: -1, ch: "*" }, { dx: 1, dy: -1, ch: "'" },
+    { dx: 0, dy: 0, ch: "@" },
+  ];
+
+  const VEG_SHAPES: Record<Biome["veg"], VegShape[]> = {
+    tree: [MATURE_PINE, MATURE_PINE, YOUNG_PINE, WIND_PINE, ASPEN, ASPEN, DEAD_SNAG],
+    shrub: [SAGE_MOUND, SAGE_MOUND, RABBITBRUSH, BUNCHGRASS, BUNCHGRASS, CREEPING_SHRUB, WILDFLOWER, LOW_TUFT],
+    cactus: [SAGUARO, SAGUARO, BIG_SAGUARO, OCOTILLO, CHOLLA, BARREL_CACTUS, PAD_CACTUS, DESERT_SCRUB],
+  };
+
+  function stampShape(grid: Cell[][], shape: VegShape, x: number, top: number, rows: number, cols: number, layer: string) {
+    for (const cell of shape) {
+      const gy = top + cell.dy;
+      const gx = x + cell.dx;
+      if (gy < 0 || gy >= rows) continue;
+      if (gx < 1 || gx >= cols - 1) continue;
+      grid[gy][gx] = { ch: cell.ch, layer };
+    }
+  }
+
+  function paintVegetation(grid: Cell[][], ridge: number[], cols: number, rows: number, biome: Biome) {
+    const shapes = VEG_SHAPES[biome.veg] || [];
+    if (shapes.length === 0) return;
+
+    const minGap = Math.max(9, Math.floor(cols / (biome.vegDensity * 36)));
     let lastX = -minGap;
 
-    for (let x = 3; x < cols - 3; x++) {
+    for (let x = 4; x < cols - 4; x++) {
       if (x - lastX < minGap) continue;
       if (Math.random() > biome.vegDensity) continue;
 
+      const shape = pick(shapes);
       const top = ridge[x];
+      const minDy = Math.min(...shape.map((c) => c.dy));
+      if (top + minDy < 0) continue;
 
-      if (biome.veg === "shrub") {
-        // low, bushy tuft
-        if (top - 1 >= 0) grid[top - 1][x] = { ch: "*", layer: "veg" };
-        grid[top][x - 1] = { ch: "o", layer: "veg" };
-        grid[top][x] = { ch: "@", layer: "veg" };
-        grid[top][x + 1] = { ch: "o", layer: "veg" };
-        lastX = x;
-        continue;
-      }
-
-      if (top - 2 < 0) continue;
-
-      if (biome.veg === "cactus") {
-        // saguaro: arms curving UP and outward from the trunk (not
-        // drooping down like palm fronds — "\" and "/" are swapped
-        // from what you'd first guess, since "\" rises toward its
-        // outer/left end and "/" rises toward its outer/right end)
-        grid[top - 2][x - 1] = { ch: "\\", layer: "veg" };
-        grid[top - 2][x] = { ch: "|", layer: "veg" };
-        grid[top - 2][x + 1] = { ch: "/", layer: "veg" };
-        grid[top - 1][x] = { ch: "|", layer: "veg" };
-        grid[top][x] = { ch: "|", layer: "veg" };
-        lastX = x;
-        continue;
-      }
-
-      // "tree" (pine): tiered triangular canopy over a trunk
-      grid[top - 2][x] = { ch: "^", layer: "veg" };
-      grid[top - 1][x - 1] = { ch: "/", layer: "veg" };
-      grid[top - 1][x] = { ch: "_", layer: "veg" };
-      grid[top - 1][x + 1] = { ch: "\\", layer: "veg" };
-      grid[top][x] = { ch: "|", layer: "veg" };
+      stampShape(grid, shape, x, top, rows, cols, "veg");
       lastX = x;
     }
 
-    // steppe-only easter egg: a single tiny grazing-animal silhouette
     if (biome.grazer && Math.random() < 0.6) {
       const x = Math.floor(rand(cols * 0.15, cols * 0.85));
       const top = ridge[x];
@@ -283,7 +389,7 @@
 
   function paintSky(grid: Cell[][], cols: number, skyRows: number) {
     const starChars = [".", "*", "'", "`"];
-    const starCount = Math.floor(cols * skyRows * 0.045);
+    const starCount = Math.floor(cols * skyRows * 0.05);
     for (let i = 0; i < starCount; i++) {
       const x = Math.floor(rand(0, cols));
       const y = Math.floor(rand(0, skyRows));
@@ -293,7 +399,7 @@
     }
     const gx = Math.floor(rand(cols * 0.08, cols * 0.88));
     const gy = Math.floor(rand(0, skyRows * 0.5));
-    grid[gy][gx] = { ch: "O", layer: "glow" };
+    if (skyRows > 0) grid[gy][gx] = { ch: "O", layer: "glow" };
   }
 
   function escapeHtml(s: string) {
@@ -339,12 +445,19 @@
     return width;
   }
 
-  // ===== Weather / wildlife =====
-  // Two different kinds of "occasional": persistent precipitation is a
-  // once-per-load coin flip that, if it lands, stays for the whole visit
-  // (a scene property, not an event). Birds/tumbleweed are recurring
-  // transient events that keep re-rolling while the page stays open.
+  function measureLineHeight(pre: HTMLElement) {
+    const probe = document.createElement("span");
+    probe.textContent = "#\n#\n#\n#\n#";
+    probe.style.visibility = "hidden";
+    probe.style.position = "absolute";
+    probe.style.whiteSpace = "pre";
+    pre.appendChild(probe);
+    const height = probe.getBoundingClientRect().height / 5;
+    pre.removeChild(probe);
+    return height;
+  }
 
+  // ===== Weather / wildlife =====
   let weatherTimer: ReturnType<typeof setTimeout> | null = null;
   const activeIntervals: ReturnType<typeof setInterval>[] = [];
 
@@ -358,31 +471,55 @@
     if (layer) layer.innerHTML = "";
   }
 
-  function spawnBirds(layer: HTMLElement) {
-    const count = Math.random() < 0.4 ? 2 : 1;
+  // Small flapping birds get a real 3-frame wingbeat; occasionally a
+  // bigger, slower soaring bird glides through instead — same size,
+  // just a plain "V" held fixed with no flap, for variety in the sky.
+  function spawnBirds(layer: HTMLElement, skyMaxPct: number) {
+    const soaring = Math.random() < 0.3;
+    const count = soaring ? 1 : Math.random() < 0.4 ? 2 : 1;
+
     for (let i = 0; i < count; i++) {
       const bird = document.createElement("span");
-      bird.className = "wx-bird";
-      bird.textContent = "v";
-      bird.style.top = rand(8, 30) + "%";
-      bird.style.animationDuration = rand(7, 12) + "s";
+      bird.className = "wx-bird" + (soaring ? " wx-bird-soar" : "");
+      bird.style.top = rand(2, skyMaxPct) + "%";
+      bird.style.animationDuration = (soaring ? rand(16, 24) : rand(9, 15)) + "s";
       bird.style.animationDelay = rand(0, 2) + "s";
       layer.appendChild(bird);
 
-      const flap = setInterval(() => {
-        bird.textContent = bird.textContent === "v" ? "^" : "v";
-      }, 220);
-      activeIntervals.push(flap);
-
-      bird.addEventListener("animationend", () => {
-        clearInterval(flap);
-        bird.remove();
-      });
+      if (soaring) {
+        bird.textContent = "V";
+        bird.addEventListener("animationend", () => bird.remove());
+      } else {
+        const frames = ["v", "-", "^", "-"];
+        let fi = 0;
+        bird.textContent = frames[0];
+        const flap = setInterval(() => {
+          fi = (fi + 1) % frames.length;
+          bird.textContent = frames[fi];
+        }, 180);
+        activeIntervals.push(flap);
+        bird.addEventListener("animationend", () => {
+          clearInterval(flap);
+          bird.remove();
+        });
+      }
     }
   }
 
-  // Persistent for the whole visit — no cleanup timer. Cleared only when
-  // clearWeather() wipes the layer on the next regenerate (resize/reload).
+  function spawnCloud(layer: HTMLElement, skyMaxPct: number) {
+    const shapes = ["~~~~", ".~~~~.", "~~~~~~", ".~~~~~~.", "~~~~~~~~~"];
+    const cloud = document.createElement("span");
+    cloud.className = "wx-cloud";
+    cloud.textContent = pick(shapes);
+    cloud.style.top = rand(2, Math.max(4, skyMaxPct * 0.75)) + "%";
+    cloud.style.animationDuration = rand(28, 50) + "s";
+    cloud.style.setProperty("--bob", rand(-3, 3).toFixed(1) + "%");
+    layer.appendChild(cloud);
+    cloud.addEventListener("animationend", () => cloud.remove());
+  }
+
+  // Persistent for the whole visit — no cleanup timer. Cleared only
+  // when clearWeather() wipes the layer on the next regenerate.
   function spawnPersistentPrecip(layer: HTMLElement, kind: "snow" | "rain") {
     const count = kind === "snow" ? 16 : 22;
     const chars = kind === "snow" ? ["*", ".", "'"] : ["|", "'", ","];
@@ -399,62 +536,61 @@
     }
   }
 
-  // Deliberately NOT smooth interpolation — a setInterval hop from
-  // waypoint to waypoint (position snaps, no easing) plus a cycling
-  // glyph (rotating a near-symmetric "o" via CSS transform barely
-  // reads as motion at all) for a chunky, low-frame-rate sprite feel.
-  // Vertical position at each hop is sampled from the actual near-ridge
-  // heights so it still rolls along the ground contour.
-  function spawnTumbleweed(layer: HTMLElement, nearRidge: number[], cols: number, rows: number) {
-    const t = document.createElement("span");
-    t.className = "wx-tumbleweed";
-    layer.appendChild(t);
+  // Leaves combine a smooth CSS-driven drift/wobble (wx-blow) with a
+  // small flutter — alternating between two related glyphs — so each
+  // leaf visibly turns as it blows through, not just slides.
+  function spawnLeaves(layer: HTMLElement) {
+    const count = Math.random() < 0.5 ? 3 : 2;
+    const glyphSets = [
+      [",", "'"],
+      ['"', ";"],
+      [",", '"'],
+    ];
+    for (let i = 0; i < count; i++) {
+      const leaf = document.createElement("span");
+      leaf.className = "wx-leaf";
+      const glyphs = pick(glyphSets);
+      leaf.textContent = glyphs[0];
+      leaf.style.top = rand(50, 78) + "%";
+      leaf.style.animationDuration = rand(3.5, 5.5) + "s";
+      leaf.style.animationDelay = rand(0, 2.2) + "s";
+      layer.appendChild(leaf);
 
-    const frames = ["*", "x", "+", "o"];
-    const totalSteps = rand(14, 20);
-    const stepMs = rand(280, 420);
-    let step = 0;
+      let gi = 0;
+      const flutter = setInterval(() => {
+        gi = (gi + 1) % glyphs.length;
+        leaf.textContent = glyphs[gi];
+      }, 160);
+      activeIntervals.push(flutter);
 
-    const tick = () => {
-      const frac = step / totalSteps;
-      const x = Math.max(0, Math.min(cols - 1, Math.floor(frac * cols)));
-      const topPct = ((nearRidge[x] - 1) / rows) * 100;
-      const leftPct = -6 + frac * 112;
-      t.style.left = leftPct + "%";
-      t.style.top = topPct + "%";
-      t.textContent = frames[step % frames.length];
-      step++;
-      if (step > totalSteps) {
-        clearInterval(hop);
-        t.remove();
-      }
-    };
-
-    tick();
-    const hop = setInterval(tick, stepMs);
-    activeIntervals.push(hop);
+      leaf.addEventListener("animationend", () => {
+        clearInterval(flutter);
+        leaf.remove();
+      });
+    }
   }
 
-  // Recurring rather than one-shot: rechecks every so often for as long
-  // as the page stays open. Cancelled and restarted by clearWeather()
-  // on every regenerate (resize) via the shared weatherTimer handle.
-  // Only covers birds/tumbleweed — precipitation is decided once in
-  // generate(), not here.
+  // Recurring rather than one-shot: rechecks every so often for as
+  // long as the page stays open. Cancelled and restarted by
+  // clearWeather() on every regenerate (resize) via the shared
+  // weatherTimer handle. Only covers birds/leaves/cloud — precipitation
+  // is decided once in generate(), not here.
   function scheduleNextWeather(
     layer: HTMLElement,
     biome: Biome,
-    near: number[],
     cols: number,
-    rows: number
+    rows: number,
+    skyMaxPct: number
   ) {
-    const delay = rand(6000, 14000);
+    const delay = rand(4500, 11000);
     weatherTimer = setTimeout(() => {
-      if (Math.random() < 0.55 && biome.weather.length > 0) {
+      if (Math.random() < 0.65 && biome.weather.length > 0) {
         const kind = pick(biome.weather);
-        if (kind === "birds") spawnBirds(layer);
-        else spawnTumbleweed(layer, near, cols, rows);
+        if (kind === "birds") spawnBirds(layer, skyMaxPct);
+        else if (kind === "cloud") spawnCloud(layer, skyMaxPct);
+        else if (kind === "leaves") spawnLeaves(layer);
       }
-      scheduleNextWeather(layer, biome, near, cols, rows);
+      scheduleNextWeather(layer, biome, cols, rows, skyMaxPct);
     }, delay);
   }
 
@@ -462,6 +598,7 @@
     const wrap = document.getElementById("ascii-landscape");
     const pre = document.getElementById("ascii-landscape-art");
     const weatherLayer = document.getElementById("ascii-landscape-weather");
+    const groundSpace = document.getElementById("ground-space");
     if (!wrap || !pre) return;
 
     clearWeather(weatherLayer);
@@ -469,70 +606,88 @@
     const biome = pick(BIOMES);
     wrap.dataset.biome = biome.name;
 
-    const rows = 40;
     const charWidth = measureCharSize(pre);
-    if (!charWidth) return;
+    const lineHeight = measureLineHeight(pre);
+    if (!charWidth || !lineHeight) return;
 
-    const cols = Math.max(
-      60,
-      Math.min(340, Math.floor(wrap.clientWidth / charWidth))
-    );
+    const cols = Math.max(90, Math.min(420, Math.floor(wrap.clientWidth / charWidth)));
 
-    const grid: Cell[][] = Array.from({ length: rows }, () =>
-      new Array(cols).fill(null)
-    );
+    const totalHeightPx = wrap.clientHeight;
+    const groundHeightPx = groundSpace ? groundSpace.offsetHeight : totalHeightPx * 0.35;
+    const rows = Math.max(70, Math.min(260, Math.round(totalHeightPx / lineHeight)));
 
-    paintSky(grid, cols, Math.round(rows * 0.4));
+    // fraction of the scene's total height taken up by real page
+    // content (everything above the reserved ground space) — terrain
+    // bands are placed relative to this so the dense "fore" band
+    // reliably lands inside the reserved ground space at the bottom.
+    const contentFrac = Math.max(0.15, Math.min(0.92, 1 - groundHeightPx / totalHeightPx));
 
-    const far = ridgeHeights(cols, rows, 0.26, 0.46, biome, biome.farMidFlatten);
-    paintRidge(grid, far, cols, rows, "far", biome.farFill);
+    const grid: Cell[][] = Array.from({ length: rows }, () => new Array(cols).fill(null));
 
-    const mid = ridgeHeights(cols, rows, 0.48, 0.7, biome, biome.farMidFlatten);
-    paintRidge(grid, mid, cols, rows, "mid", biome.midFill);
+    const skyMaxFrac = contentFrac * 0.55;
+    paintSky(grid, cols, Math.round(rows * skyMaxFrac));
+
+    // Compute every ridge line up front so each layer's fill can stop
+    // exactly where the next, nearer layer begins (see paintRidge).
+    const far = ridgeHeights(cols, rows, contentFrac * 0.3, contentFrac * 0.82, biome, biome.farMidFlatten);
+    const midMax = contentFrac + (1 - contentFrac) * 0.42;
+    const mid = ridgeHeights(cols, rows, contentFrac * 0.66, midMax, biome, biome.farMidFlatten);
+    const nearMin = contentFrac + (1 - contentFrac) * 0.16;
+    const nearMax = contentFrac + (1 - contentFrac) * 0.62;
+    const near = ridgeHeights(cols, rows, nearMin, nearMax, biome, 1);
+    const foreMin = contentFrac + (1 - contentFrac) * 0.48;
+    const fore = ridgeHeights(cols, rows, foreMin, 0.995, biome, 1);
+
+    paintRidge(grid, far, cols, rows, "far", biome.farFill, mid);
+    paintRidge(grid, mid, cols, rows, "mid", biome.midFill, near);
     paintMidDetail(grid, mid, cols, biome);
-
-    const near = ridgeHeights(cols, rows, 0.7, 0.97, biome);
-    paintRidge(grid, near, cols, rows, "near", ["#"]);
+    paintRidge(grid, near, cols, rows, "near", ["#"], fore);
     if (biome.snowCaps) paintSnowCaps(grid, near, cols, rows);
-    paintVegetation(grid, near, cols, biome);
+    paintRidge(grid, fore, cols, rows, "fore", biome.foreFill);
+    if (biome.fence) paintFence(grid, fore, cols);
+    paintVegetation(grid, fore, cols, rows, biome);
 
     pre.innerHTML = render(grid, rows, cols);
 
-    if (weatherLayer) {
-      // Persistent precipitation: decided once per load, stays for the
-      // whole visit if it lands — not part of the recurring cycle.
+    const reducedMotion =
+      window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (weatherLayer && !reducedMotion) {
       if (biome.precip && Math.random() < 0.2) {
         spawnPersistentPrecip(weatherLayer, biome.precip);
       }
-      scheduleNextWeather(weatherLayer, biome, near, cols, rows);
+      scheduleNextWeather(weatherLayer, biome, cols, rows, skyMaxFrac * 100);
     }
   }
 
   let resizeTimer: ReturnType<typeof setTimeout>;
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(generate, 200);
+    resizeTimer = setTimeout(generate, 250);
   });
 
-  generate();
+  // Defer the first generation by a frame so real page content paints
+  // immediately instead of the whole page blocking on building and
+  // inserting a large grid before anything is visible at all.
+  requestAnimationFrame(() => requestAnimationFrame(generate));
 </script>
 
 <style>
   .ascii-landscape {
-    position: relative;
-    left: 50%;
-    width: 100vw;
-    margin-left: -50vw;
+    position: absolute;
+    inset: 0;
+    z-index: 0;
     overflow: hidden;
+    pointer-events: none;
   }
 
   .ascii-landscape-art {
-    position: relative;
+    position: absolute;
+    inset: 0;
     margin: 0;
     padding: 0;
-    width: 100%;
-    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
-    font-size: clamp(6px, 0.95vw, 10.5px);
+    font-family: var(--font-mono);
+    font-size: clamp(6px, 0.82vw, 11px);
     line-height: 1;
     letter-spacing: 0;
     white-space: pre;
@@ -541,76 +696,55 @@
     font-weight: 600;
   }
 
-  .ascii-landscape-art :global(.L-far) {
-    color: var(--land-far);
-    animation: wx-shimmer-far 7s ease-in-out infinite;
-  }
-  .ascii-landscape-art :global(.L-mid) {
-    color: var(--land-mid);
-    animation: wx-shimmer-mid 9s ease-in-out infinite;
-  }
+  .ascii-landscape-art :global(.L-star) { color: var(--ink-2); opacity: 0.7; animation: wx-twinkle 4.5s ease-in-out infinite; }
+  .ascii-landscape-art :global(.L-glow) { color: var(--contour); font-weight: 800; }
+  .ascii-landscape-art :global(.L-far) { color: var(--land-far); animation: wx-shimmer-far 7s ease-in-out infinite; }
+  .ascii-landscape-art :global(.L-mid) { color: var(--land-mid); animation: wx-shimmer-mid 9s ease-in-out infinite; }
   .ascii-landscape-art :global(.L-near) { color: var(--land-near); }
+  .ascii-landscape-art :global(.L-fore) { color: var(--land-fore); }
   .ascii-landscape-art :global(.L-veg) { color: var(--land-veg); }
   .ascii-landscape-art :global(.L-snow) { color: var(--land-snow); }
-  .ascii-landscape-art :global(.L-star) { color: var(--land-star); }
-  .ascii-landscape-art :global(.L-glow) { color: var(--land-glow); font-weight: 800; }
+  .ascii-landscape-art :global(.L-fence) { color: var(--land-fence); }
 
-  /* ===== Biome palettes — no background, glyph color only ===== */
+  @keyframes wx-twinkle { 0%, 100% { opacity: 0.85; } 50% { opacity: 0.25; } }
+
+  /* ===== Biome palettes — glyph color only, no background fill. Real
+     hue separation per layer (not just a lightness step on one hue),
+     and veg is always a distinctly more saturated green than the
+     terrain around it. Light mode: far lightest / fore darkest
+     (daytime haze). Dark mode: far darkest / fore lightest (things
+     nearer catch more of what light there is). ===== */
   .ascii-landscape[data-biome="pine"] {
-    --land-far: #a9c2b3;
-    --land-mid: #6f9a80;
-    --land-near: #2c5a44;
-    --land-veg: #1c3f2f;
-    --land-snow: #ffffff;
-    --land-star: transparent;
-    --land-glow: #f5c463;
+    --land-far: #90a8ae; --land-mid: #5f8a6e; --land-near: #2c5a44; --land-fore: #24401f;
+    --land-veg: #1a7a42; --land-snow: #ffffff; --land-fence: #6b5738;
   }
-  :global(html[data-theme="dark"]) .ascii-landscape[data-biome="pine"] {
-    --land-far: #2f4d47;
-    --land-mid: #295c50;
-    --land-near: #143a30;
-    --land-veg: #0d241d;
-    --land-snow: #dfeaec;
-    --land-star: #b9c6d6;
-    --land-glow: #eef2f7;
-  }
-
   .ascii-landscape[data-biome="desert"] {
-    --land-far: #e3c093;
-    --land-mid: #cf9c5c;
-    --land-near: #8a5a2e;
-    --land-veg: #4f6b3a;
-    --land-snow: transparent;
-    --land-star: transparent;
-    --land-glow: #ff9d4d;
+    --land-far: #c9a688; --land-mid: #b8823f; --land-near: #8a5a2e; --land-fore: #5c3a18;
+    --land-veg: #4a7a2e; --land-snow: transparent; --land-fence: #7a5230;
+  }
+  .ascii-landscape[data-biome="steppe"] {
+    --land-far: #92a0ac; --land-mid: #a68a4a; --land-near: #6b4f2a; --land-fore: #453518;
+    --land-veg: #4a7a2e; --land-snow: transparent; --land-fence: #6b5738;
+  }
+  /* No bare @media (prefers-color-scheme: dark) fallback here —
+     theme-toggle.js always sets data-theme explicitly (from
+     localStorage or the OS preference) before this component's own
+     script populates anything, so relying only on the data-theme
+     attribute (rather than also matching on the OS media query)
+     avoids a real bug: a media-query rule would keep re-asserting
+     dark colors on top of an explicit data-theme="light" choice
+     whenever the OS itself still prefers dark. */
+  :global(html[data-theme="dark"]) .ascii-landscape[data-biome="pine"] {
+    --land-far: #3d4d56; --land-mid: #2f5c48; --land-near: #3a6b4a; --land-fore: #6a9c6a;
+    --land-veg: #22a35c; --land-snow: #e8f0ee; --land-fence: #8a7550;
   }
   :global(html[data-theme="dark"]) .ascii-landscape[data-biome="desert"] {
-    --land-far: #5a4230;
-    --land-mid: #493019;
-    --land-near: #2c1c0d;
-    --land-veg: #38492a;
-    --land-snow: transparent;
-    --land-star: #e0c9a6;
-    --land-glow: #f2e3c8;
-  }
-
-  .ascii-landscape[data-biome="steppe"] {
-    --land-far: #c7c79c;
-    --land-mid: #a3a375;
-    --land-near: #666638;
-    --land-veg: #4c5c30;
-    --land-snow: transparent;
-    --land-star: transparent;
-    --land-glow: #e8b95c;
+    --land-far: #6b5040; --land-mid: #8a5c2c; --land-near: #a67a3a; --land-fore: #d9ab5e;
+    --land-veg: #6ba33e; --land-snow: transparent; --land-fence: #a08152;
   }
   :global(html[data-theme="dark"]) .ascii-landscape[data-biome="steppe"] {
-    --land-far: #4a4a30;
-    --land-mid: #3a3a22;
-    --land-near: #232310;
-    --land-veg: #2c3016;
-    --land-snow: transparent;
-    --land-star: #cfcaa8;
-    --land-glow: #ece7c9;
+    --land-far: #454f5e; --land-mid: #665840; --land-near: #8a7248; --land-fore: #c2a262;
+    --land-veg: #7ba34e; --land-snow: transparent; --land-fence: #a68a5c;
   }
 
   /* ===== Weather / wildlife overlay ===== */
@@ -619,62 +753,69 @@
     inset: 0;
     overflow: hidden;
     pointer-events: none;
-    z-index: 2;
-    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
-    font-size: clamp(10px, 1.6vw, 18px);
+    z-index: 1;
+    font-family: var(--font-mono);
+    font-size: clamp(11px, 1.7vw, 19px);
   }
 
   .ascii-landscape-weather :global(.wx-bird) {
+    position: absolute; left: -6%; color: var(--ink);
+    animation-name: wx-fly; animation-timing-function: linear; animation-fill-mode: forwards;
+  }
+  .ascii-landscape-weather :global(.wx-bird-soar) { opacity: 0.85; }
+
+  .ascii-landscape-weather :global(.wx-cloud) {
+    position: absolute; left: -10%; color: var(--ink-2); opacity: 0.55;
+    animation-name: wx-drift; animation-timing-function: linear; animation-fill-mode: forwards;
+  }
+
+  .ascii-landscape-weather :global(.wx-particle) { position: absolute; top: -6%; animation-name: wx-fall; animation-timing-function: linear; }
+  .ascii-landscape-weather :global(.wx-snow) { color: var(--ink-2); }
+  .ascii-landscape-weather :global(.wx-rain) { color: var(--ink-2); }
+
+  .ascii-landscape-weather :global(.wx-leaf) {
     position: absolute;
     left: -6%;
-    color: var(--text);
-    animation-name: wx-fly;
-    animation-timing-function: linear;
+    color: var(--wood);
+    animation-name: wx-blow;
+    animation-timing-function: ease-in-out;
     animation-fill-mode: forwards;
   }
 
-  .ascii-landscape-weather :global(.wx-particle) {
-    position: absolute;
-    top: -6%;
-    animation-name: wx-fall;
-    animation-timing-function: linear;
-  }
-
-  .ascii-landscape-weather :global(.wx-snow) { color: var(--text-2); }
-  .ascii-landscape-weather :global(.wx-rain) { color: var(--muted); }
-
-  /* Positioned/rotated via the Web Animations API in JS (it samples the
-     actual terrain height as it crosses, not a flat CSS keyframe path),
-     so only static appearance lives here. Deliberately smaller than
-     birds/particles. */
-  .ascii-landscape-weather :global(.wx-tumbleweed) {
-    position: absolute;
-    left: -6%;
-    color: var(--muted);
-    font-size: 0.6em;
-    font-weight: 800;
-  }
-
   @keyframes wx-fly {
-    from { left: -6%; }
-    to { left: 106%; }
+    0%   { left: -6%;  transform: translateY(0); }
+    25%  { transform: translateY(-6%); }
+    50%  { transform: translateY(2%); }
+    75%  { transform: translateY(-4%); }
+    100% { left: 106%; transform: translateY(0); }
+  }
+  @keyframes wx-drift {
+    0%   { left: -10%; transform: translateY(0); }
+    50%  { transform: translateY(var(--bob, 2%)); }
+    100% { left: 110%; transform: translateY(0); }
+  }
+  @keyframes wx-fall { 0% { top: -6%; opacity: 1; } 100% { top: 106%; opacity: 0.85; } }
+  @keyframes wx-shimmer-far { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+  @keyframes wx-shimmer-mid { 0%, 100% { opacity: 1; } 50% { opacity: 0.75; } }
+  @keyframes wx-blow {
+    0%   { left: -6%;  transform: translateY(0) rotate(0deg); opacity: 0; }
+    8%   { opacity: 1; }
+    30%  { transform: translateY(-10%) rotate(60deg); }
+    55%  { transform: translateY(6%) rotate(160deg); }
+    78%  { transform: translateY(-6%) rotate(260deg); }
+    92%  { opacity: 1; }
+    100% { left: 106%; transform: translateY(4%) rotate(360deg); opacity: 0.85; }
   }
 
-  @keyframes wx-fall {
-    0% { top: -6%; opacity: 1; }
-    100% { top: 106%; opacity: 0.85; }
-  }
-
-  /* Gentle atmospheric breathing on the two background layers — subtle,
-     and deliberately not synced (different durations) so it doesn't
-     read as a single flat pulse. */
-  @keyframes wx-shimmer-far {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
-  }
-
-  @keyframes wx-shimmer-mid {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.75; }
+  @media (prefers-reduced-motion: reduce) {
+    .ascii-landscape-art :global(.L-star),
+    .ascii-landscape-art :global(.L-far),
+    .ascii-landscape-art :global(.L-mid),
+    .ascii-landscape-weather :global(.wx-bird),
+    .ascii-landscape-weather :global(.wx-cloud),
+    .ascii-landscape-weather :global(.wx-particle),
+    .ascii-landscape-weather :global(.wx-leaf) {
+      animation: none;
+    }
   }
 </style>

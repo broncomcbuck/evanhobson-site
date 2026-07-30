@@ -24,7 +24,7 @@ const canonicalUrl =
 
     {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
 
-    <meta name="theme-color" content="#F8F7F4" />
+    <meta name="theme-color" content="#e6dcc0" />
 
     <!-- Open Graph -->
     <meta property="og:title" content={title} />
@@ -41,12 +41,23 @@ const canonicalUrl =
   <body>
     <NavBar />
 
-    <main class="container">
-      <slot />
-      <div class="landscape-slot">
-        <AsciiLandscape />
+    <!-- page-wrap holds the ASCII scene (absolutely positioned, sized
+         to this wrapper's full height) and the real content as
+         siblings, so the scene reads as one continuous picture behind
+         everything: sky at the top, descending through the terrain to
+         a dense ground band at the bottom. ground-space reserves real
+         height for that ground band instead of squeezing it into
+         whatever's left under the page content. -->
+    <div class="page-wrap">
+      <AsciiLandscape />
+
+      <div class="content-layer">
+        <main class="container">
+          <slot />
+        </main>
+        <div class="ground-space" id="ground-space" aria-hidden="true"></div>
       </div>
-    </main>
+    </div>
 
     <footer class="site-footer">
       <div class="site-footer-inner">
@@ -61,33 +72,36 @@ const canonicalUrl =
 </html>
 
 <style>
-  /* Ridgeline sits behind the last card's bottom edge on every page and
-     runs down flush to the footer. Negative margins cancel out each
-     page wrapper's own bottom padding (.home/.page/.essay all share the
-     same clamp(2.5rem,5vw,4rem) value) and the footer's top margin —
-     that zeroing is a main:has(.ascii-landscape) rule in global.css,
-     since Astro doesn't correctly scope :global() nested inside :has()
-     when written in a component's own <style> block. */
-  .landscape-slot {
+  .page-wrap {
+    position: relative;
+  }
+
+  .content-layer {
     position: relative;
     z-index: 1;
-    margin-top: -1.6rem;
-    margin-bottom: -1.4rem;
+  }
+
+  /* Reserves real vertical room below the page content for the ground
+     portion of the ASCII scene to render at proper detail — without
+     this it would be squeezed to whatever sliver is left under the
+     content instead of a real "surface" at the bottom of the page. */
+  .ground-space {
+    min-height: 42vh;
   }
 
   @media (max-width: 700px) {
-    .landscape-slot {
-      margin-top: -1rem;
-      margin-bottom: -0.8rem;
+    .ground-space {
+      min-height: 32vh;
     }
   }
 
   .site-footer {
-    margin-top: 3rem;
-    padding: 1.5rem 0 2.5rem;
-    border-top: 1px solid var(--border);
     position: relative;
-    z-index: 2;
+    z-index: 1;
+    margin-top: 1.5rem;
+    padding: 1.5rem 0 2.5rem;
+    border-top: 1px solid var(--line);
+    background: var(--paper-2);
   }
 
   .site-footer-inner {
@@ -98,8 +112,9 @@ const canonicalUrl =
     align-items: center;
     justify-content: center;
     gap: 0.6rem;
-    font-size: 0.92rem;
-    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--ink-2);
     text-align: center;
   }
 
@@ -108,14 +123,13 @@ const canonicalUrl =
   }
 
   .site-footer-inner a {
-    color: var(--muted);
+    color: var(--water);
     text-decoration: none;
-    border-bottom: 1px solid color-mix(in oklab, var(--muted) 45%, transparent);
+    border-bottom: 1px solid color-mix(in oklab, var(--water) 45%, transparent);
     padding-bottom: 1px;
   }
 
   .site-footer-inner a:hover {
-    color: var(--text);
-    border-bottom-color: color-mix(in oklab, var(--accent) 55%, transparent);
+    border-bottom-color: var(--water);
   }
 </style>
