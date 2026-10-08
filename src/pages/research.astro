@@ -1,36 +1,72 @@
-
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
-<BaseLayout title="Research — Evan Hobson">
+<BaseLayout
+  title="Research | Evan Hobson"
+  description="Cattle habitat selection, feral horse movement and rangeland fieldwork."
+>
   <section class="page">
     <h1>Research</h1>
-
     <p class="intro">
-      My research focuses on movement ecology and spatial modeling, with an emphasis on
-      mechanistic and data-driven approaches grounded in field observations.
+      Most of my work uses GPS collar data to ask where grazing animals spend their time and what
+      the answer depends on. I work in the BYU Rangeland Ecology Lab with April Hulet.
     </p>
 
     <div class="list">
-      <article class="item">
-        <h2>Cattle movement and landscape use</h2>
+      <article class="item" id="cattle-rsf">
+        <h2>Cattle resource selection in cheatgrass-invaded rangelands during dormant-season grazing</h2>
+        <p class="meta">Lead author · manuscript with coauthors for review · target: Rangeland Ecology &amp; Management</p>
         <p>
-          Analysis of GPS-collared cattle to quantify habitat selection, movement behavior,
-          and responses to heterogeneous rangeland environments.
+          Cows grazed the Spring Hills allotment near Malad, Idaho, in late October and November of
+          2021 and 2022 as part of a project meant to suppress cheatgrass. I fit resource selection
+          functions to GPS locations from 64 cow-year deployments (31 cows in 2021, 33 in 2022). The
+          models are identical except for the cheatgrass layer, which comes from one of three
+          remote-sensing products.
         </p>
-        <p class="meta">Status: ongoing</p>
+        <p>
+          The species-specific product (USGS REPMS) fit best. With it, cows used areas with more
+          cheatgrass less in 2021 and more in 2022. The two RAP products did not show that clear year
+          difference. With two years of data I can't say why the sign changed, since year is
+          confounded with weather, stocking and vegetation.
+        </p>
       </article>
 
-      <article class="item">
-        <h2>Feral horse movement ecology</h2>
+      <article class="item" id="horses">
+        <h2>Seasonal and monthly variation in feral horse movement and space use in northwestern Nevada</h2>
+        <p class="meta">Manuscript in preparation</p>
         <p>
-          Movement analysis of feral horses examining space use, home range structure,
-          and landscape drivers across arid systems.
+          Legacy GPS data from 11 feral horses, recorded every 30 minutes for between two months and
+          two years. I measure daily distance traveled and daily space use (as daily minimum convex
+          polygons, used as a movement metric rather than a home range) and compare them with water
+          availability and season.
         </p>
-        <p class="meta">Status: ongoing</p>
+      </article>
+
+      <article class="item" id="states">
+        <h2>Accelerometer behavior states and habitat selection</h2>
+        <p class="meta">On hold</p>
+        <p>
+          The same collars carried accelerometers, and the source study labeled each cow's behavior
+          as grazing, resting or walking. This project asks whether selection results change when
+          they are split by behavior. It is waiting on the original labeling records.
+        </p>
+      </article>
+
+      <article class="item" id="field">
+        <h2>Fieldwork</h2>
+        <p>
+          Summer 2026, Rangeland Ecology Lab. Vegetation monitoring for the
+          Sagebrush Steppe Treatment Evaluation Project (SageSTEP) and a targeted sheep-grazing study
+          in Idaho: line-point intercept, canopy and basal gap, plant density, biomass, shrub volume
+          and soil stability.
+        </p>
+        <p>
+          2024 to 2025, Wildlife Ecology Lab. Pygmy rabbit camera and vegetation
+          surveys, mule deer collar retrievals and mortality investigations, and cementum annuli
+          aging.
+        </p>
       </article>
     </div>
   </section>
 </BaseLayout>
-

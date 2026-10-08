@@ -29,3 +29,4 @@ tree.txt
 *.swo
 # ===== OS junk =====
 # ===== Astro build / cache =====
+cv/*.pdf

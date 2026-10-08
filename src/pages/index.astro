@@ -3,131 +3,61 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
 <BaseLayout
-  title="Evan Hobson — Ecological Modeling"
-  description="Ecological modeling, movement ecology, and computational analysis by Evan Hobson."
+  title="Evan Hobson"
+  description="Evan Hobson, wildlife ecology student at BYU working on cattle and feral horse movement."
 >
-  <div class="home">
-    <div class="sheet">
-      <div class="sheet-pad">
-        <div class="who-grid">
-          <div class="photo">
-            <img src="/images/evan.jpg" alt="Evan Hobson" loading="eager" />
-          </div>
-
-          <div class="who">
-            <p class="eyebrow">Ecological modeling • movement ecology • computation</p>
-            <h1>Evan Hobson</h1>
-            <p class="role">
-              I am interested in understanding how animals move through real landscapes —
-              and how we can bridge that theoretical knowledge to practical management.
-            </p>
-            <div class="who-links">
-              <a class="textlink" href="/about">About</a>
-              <span class="sep">·</span>
-              <a class="textlink" href="/cv">CV</a>
-              <span class="sep">·</span>
-              <a class="textlink" href="/research">Research</a>
-            </div>
-          </div>
-        </div>
-
-        <h2 class="field"><span class="cap">┌─</span> start here <span class="rule"></span><span class="cap">─┐</span></h2>
-        <div class="routes">
-          <a class="route" href="/research">
-            <div class="route-top">
-              <h3>Research</h3>
-              <span class="tag">Academic</span>
-            </div>
-            <p>Movement ecology and spatial modeling—questions, methods, datasets, and results.</p>
-            <span class="go">→ Explore Research</span>
-          </a>
-
-          <a class="route" href="/projects">
-            <div class="route-top">
-              <h3>Projects</h3>
-              <span class="tag">Exploratory</span>
-            </div>
-            <p>Various side investigations—computational work, experiments, and long-running builds.</p>
-            <span class="go">→ Browse Projects</span>
-          </a>
-
-          <a class="route" href="/writing">
-            <div class="route-top">
-              <h3>Writing</h3>
-              <span class="tag">Essays</span>
-            </div>
-            <p>Formal essays and extended analyses written to be read carefully.</p>
-            <span class="go">→ Read Writing</span>
-          </a>
-        </div>
-
-        <h2 class="field"><span class="cap">┌─</span> research <span class="rule"></span><span class="cap">─┐</span></h2>
-        <div class="log">
-          <div class="log-entry">
-            <h3>Cattle movement and landscape use</h3>
-            <div class="log-fields">
-              <span>GPS telemetry</span>
-              <span>accelerometer</span>
-              <span>rangeland ecology</span>
-              <span class="status">ongoing</span>
-            </div>
-            <p class="note-text">
-              GPS- and accelerometer-linked telemetry on a sagebrush-steppe allotment in southeastern
-              Idaho, quantifying habitat selection and movement response to heterogeneous rangeland.
-            </p>
-          </div>
-          <div class="log-entry">
-            <h3>Feral horse movement ecology</h3>
-            <div class="log-fields">
-              <span>space use</span>
-              <span>home range</span>
-              <span>arid systems</span>
-              <span class="status">ongoing</span>
-            </div>
-            <p class="note-text">
-              Space use, home range structure, and landscape drivers of feral horse movement across
-              arid systems.
-            </p>
-          </div>
-        </div>
+  <div class="page home">
+    <div class="who-grid">
+      <div class="photo">
+        <img src="/images/evan.jpg" alt="Evan Hobson" loading="eager" />
       </div>
-
-      <div class="ruler" aria-hidden="true" title="Latitude gridline, sagebrush-steppe study area — SE Idaho">
-        <span class="tickmark"><span class="t"></span>43.79°</span>
-        <span class="tickmark"><span class="t"></span>43.80°</span>
-        <span class="tickmark"><span class="t"></span>43.81°</span>
-        <span class="tickmark"><span class="t"></span>43.82°</span>
-        <span class="tickmark"><span class="t"></span>43.83°</span>
-        <span class="tickmark"><span class="t"></span>43.84°</span>
-        <span class="tickmark"><span class="t"></span>43.85°</span>
+      <div class="who">
+        <h1>Evan Hobson</h1>
+        <p>
+          I study Wildlife and Wildlands Conservation at Brigham Young University and graduate in
+          April 2027. In the BYU Rangeland Ecology Lab I analyze GPS collar data from cattle grazing
+          cheatgrass-invaded sagebrush steppe in southeastern Idaho. I am applying to graduate
+          programs in movement ecology for fall 2027.
+        </p>
+        <p class="contact">
+          <a href="mailto:evanjhobson@gmail.com">evanjhobson@gmail.com</a>
+          <span class="sep">·</span>
+          <a href="/cv">CV</a>
+          <span class="sep">·</span>
+          <a href="https://github.com/broncomcbuck">GitHub</a>
+        </p>
       </div>
     </div>
+
+    <h2>Current work</h2>
+    <ul class="plain">
+      <li>
+        <a href="/research#cattle-rsf">Cattle resource selection in cheatgrass-invaded rangelands</a>.
+        Lead author, manuscript with coauthors for review.
+      </li>
+      <li>
+        <a href="/research#horses">Feral horse movement and space use in northwestern Nevada</a>.
+        Manuscript in preparation.
+      </li>
+      <li>
+        <a href="/research#field">Rangeland vegetation monitoring</a> for SageSTEP and a targeted
+        sheep-grazing study, summer 2026.
+      </li>
+    </ul>
+
+    <h2>Elsewhere on the site</h2>
+    <ul class="plain">
+      <li><a href="/projects">Projects</a>: Game of Life ash statistics and a scripture text-analysis script.</li>
+      <li><a href="/writing">Writing</a>: an essay on emotion and spiritual growth.</li>
+    </ul>
   </div>
 
   <style>
-    .home {
-      padding: clamp(1rem, 3vw, 2rem) 0 clamp(2.5rem, 5vw, 4rem);
-    }
-
-    .sheet {
-      width: min(900px, calc(100% - 3rem));
-      margin: 0 auto;
-      background: var(--paper);
-      border: 1px solid var(--ink);
-      position: relative;
-      z-index: 2;
-    }
-
-    .sheet-pad {
-      padding: clamp(1.4rem, 3vw, 2.2rem) clamp(1.2rem, 4vw, 2.4rem) 1.6rem;
-    }
-
     .who-grid {
       display: grid;
       grid-template-columns: 150px 1fr;
       gap: 1.6rem;
-      align-items: center;
-      margin-bottom: 1.8rem;
+      align-items: start;
     }
 
     .photo img {
@@ -137,147 +67,43 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       border: 1px solid var(--ink);
     }
 
-    .eyebrow {
-      margin: 0 0 0.5rem;
-      font-family: var(--font-mono);
-      font-size: 0.78rem;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--ink-2);
-      font-weight: 700;
-    }
-
     .who h1 {
-      font-family: var(--font-serif);
-      font-size: clamp(1.9rem, 3.3vw, 2.5rem);
-      margin: 0 0 0.5rem;
-      color: var(--ink);
-      line-height: 1.12;
+      margin-top: 0;
     }
 
-    .who .role {
+    .who p {
       margin: 0 0 0.8rem;
-      max-width: 65ch;
-      font-size: 1.02rem;
-      line-height: 1.65;
-      color: var(--ink-2);
+      line-height: 1.7;
     }
 
-    .who-links {
+    .contact {
       display: flex;
-      gap: 0.6rem;
-      align-items: center;
       flex-wrap: wrap;
-      font-family: var(--font-mono);
-      font-size: 0.85rem;
-      color: var(--ink-2);
-    }
-
-    .textlink {
-      color: var(--water);
-      text-decoration: none;
-      border-bottom: 1px solid color-mix(in oklab, var(--water) 45%, transparent);
-      padding-bottom: 2px;
-    }
-    .textlink:hover { border-bottom-color: var(--water); }
-    .sep { opacity: 0.6; }
-
-    h2.field {
-      display: flex;
-      align-items: center;
       gap: 0.5rem;
-      font-family: var(--font-mono);
-      font-size: 0.8rem;
-      letter-spacing: 0.05em;
-      color: var(--ink);
-      margin: 0 0 1rem;
-    }
-    h2.field .cap { color: var(--ink-2); }
-    h2.field .rule { flex: 1; border-top: 1px dashed var(--line); }
-
-    .routes {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.9rem;
-      margin-bottom: 2rem;
     }
 
-    .route {
-      display: grid;
-      gap: 0.55rem;
-      padding: 1rem 1.05rem;
-      text-decoration: none;
-      background: var(--paper-2);
-      border: 1px solid var(--line);
-      height: 100%;
+    .sep {
+      color: var(--ink-2);
     }
-    .route:hover { border-color: var(--ink); }
 
-    .route-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 0.8rem;
-    }
-    .route h3 {
+    ul.plain {
       margin: 0;
-      font-family: var(--font-serif);
-      font-size: 1.1rem;
-      color: var(--ink);
-    }
-    .route .tag {
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--ink-2);
-      border: 1px solid var(--line);
-      padding: 0.2rem 0.45rem;
-    }
-    .route p { margin: 0; font-size: 0.92rem; color: var(--ink-2); line-height: 1.6; }
-    .route .go {
-      font-family: var(--font-mono);
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--water);
-      width: fit-content;
+      padding-left: 1.2rem;
     }
 
-    .log { border: 1px solid var(--ink); margin-bottom: 0.3rem; }
-    .log-entry { padding: 0.95rem 1.1rem 1.05rem; border-bottom: 1px solid var(--line); }
-    .log-entry:last-child { border-bottom: none; }
-    .log-entry h3 { font-family: var(--font-serif); font-size: 1.06rem; margin: 0 0 0.5rem; color: var(--ink); }
-    .log-fields {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, auto));
-      gap: 0.2rem 1.4rem;
-      font-family: var(--font-mono);
-      font-size: 0.74rem;
-      color: var(--ink-2);
+    ul.plain li {
       margin-bottom: 0.5rem;
+      line-height: 1.6;
     }
-    .log-entry p.note-text { margin: 0; font-size: 0.93rem; color: var(--ink-2); max-width: 62ch; line-height: 1.65; }
-    .status { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.03em; color: var(--wood); }
-    .status::before { content: "●"; margin-right: 0.35em; font-size: 0.6em; vertical-align: 0.1em; }
 
-    .ruler {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.4rem clamp(1.2rem, 4vw, 2.4rem);
-      border-top: 1px solid var(--line);
-    }
-    .tickmark {
-      display: flex; flex-direction: column-reverse; align-items: center; gap: 2px;
-      font-family: var(--font-mono); font-size: 0.6rem; color: var(--ink-2);
-    }
-    .tickmark .t { width: 1px; height: 5px; background: var(--ink-2); }
+    @media (max-width: 640px) {
+      .who-grid {
+        grid-template-columns: 1fr;
+      }
 
-    @media (max-width: 700px) {
-      .who-grid { grid-template-columns: 1fr; }
-      .photo { max-width: 220px; margin: 0 auto; }
-      .routes { grid-template-columns: 1fr; }
-      .ruler .tickmark:nth-child(n+5) { display: none; }
+      .photo {
+        max-width: 180px;
+      }
     }
   </style>
 </BaseLayout>
