@@ -4,67 +4,128 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
 <BaseLayout
   title="Research | Evan Hobson"
-  description="Cattle habitat selection, feral horse movement and rangeland fieldwork."
+  description="Cattle and cheatgrass, feral horses, and a notebook of unfinished movement and fire work."
 >
   <section class="page">
     <h1>Research</h1>
     <p class="intro">
-      Most of my work uses GPS collar data to ask where grazing animals spend their time and what
-      the answer depends on. I work in the BYU Rangeland Ecology Lab with April Hulet.
+      I work in April Hulet's Rangeland Ecology Lab at BYU. Most of what I do starts with GPS
+      collar data and a question about where animals go.
     </p>
 
+    <h2>Current</h2>
     <div class="list">
       <article class="item" id="cattle-rsf">
-        <h2>Cattle resource selection in cheatgrass-invaded rangelands during dormant-season grazing</h2>
-        <p class="meta">Lead author · manuscript with coauthors for review · target: Rangeland Ecology &amp; Management</p>
+        <h3>Cattle and cheatgrass</h3>
+        <p class="meta">Lead author · manuscript with coauthors</p>
         <p>
-          Cows grazed the Spring Hills allotment near Malad, Idaho, in late October and November of
-          2021 and 2022 as part of a project meant to suppress cheatgrass. I fit resource selection
-          functions to GPS locations from 64 cow-year deployments (31 cows in 2021, 33 in 2022). The
-          models are identical except for the cheatgrass layer, which comes from one of three
-          remote-sensing products.
+          One way to fight cheatgrass is to turn cattle out in the fall to graze it down. That only
+          works if the cows actually go to the cheatgrass. Cows on the Spring Hills allotment near
+          Malad, Idaho, wore GPS collars during fall grazing in 2021 and 2022 as part of a
+          targeted-grazing study.
         </p>
         <p>
-          The species-specific product (USGS REPMS) fit best. With it, cows used areas with more
-          cheatgrass less in 2021 and more in 2022. The two RAP products did not show that clear year
-          difference. With two years of data I can't say why the sign changed, since year is
-          confounded with weather, stocking and vegetation.
+          There are several satellite-based maps of cheatgrass cover, and they don't agree. I fit
+          the same habitat-selection model three times, changing only which cheatgrass map goes
+          in, to see how much the answer depends on that choice.
+        </p>
+      </article>
+    </div>
+
+    <h2>On hold</h2>
+    <div class="list">
+      <article class="item" id="states">
+        <h3>What the cows were doing</h3>
+        <p>
+          The collars also had accelerometers, so each location comes with a guess at behavior:
+          grazing, resting or walking. I want to know whether cows pick places differently
+          depending on what they're doing there. This is waiting on the original behavior labels
+          from the study that collected the data.
         </p>
       </article>
 
       <article class="item" id="horses">
-        <h2>Seasonal and monthly variation in feral horse movement and space use in northwestern Nevada</h2>
-        <p class="meta">Manuscript in preparation</p>
+        <h3>Feral horses in northwestern Nevada</h3>
+        <p class="meta">Lead author</p>
         <p>
-          Legacy GPS data from 11 feral horses, recorded every 30 minutes for between two months and
-          two years. I measure daily distance traveled and daily space use (as daily minimum convex
-          polygons, used as a movement metric rather than a home range) and compare them with water
-          availability and season.
+          Older GPS data from 11 horses, with fixes every 30 minutes. I measured how far they moved
+          each day and how much ground they covered, and how that changed with season and water.
+          Paused until there's a clearer plan for the paper.
+        </p>
+      </article>
+    </div>
+
+    <h2 id="notebook">Notebook</h2>
+    <p>
+      Projects I took partway and stopped. Most stopped because I found someone had already done
+      the important part.
+    </p>
+    <div class="list">
+      <article class="item">
+        <h3>From individual step choices to population maps</h3>
+        <p>
+          Step-selection models are fit to individual animals, but managers want a map for the
+          population. I worked out how much is lost by averaging individuals, and tested it on Ya
+          Ha Tinda elk data. Fieberg and others (2009) had already covered the core idea. One puzzle
+          is left: the plain average-animal map predicted held-out elk better than the corrected
+          ones.
         </p>
       </article>
 
-      <article class="item" id="states">
-        <h2>Accelerometer behavior states and habitat selection</h2>
-        <p class="meta">On hold</p>
+      <article class="item">
+        <h3>How often should a collar take a fix?</h3>
         <p>
-          The same collars carried accelerometers, and the source study labeled each cow's behavior
-          as grazing, resting or walking. This project asks whether selection results change when
-          they are split by behavior. It is waiting on the original labeling records.
+          I tried to build a calculator for choosing a GPS fix interval for step-selection studies.
+          The cattle data suggested a best interval. It didn't hold up on fisher or zebra data, so I
+          stopped. Along the way I found two bugs in the <code>amt</code> R package.
         </p>
       </article>
 
-      <article class="item" id="field">
-        <h2>Fieldwork</h2>
+      <article class="item">
+        <h3>How many behavior states?</h3>
         <p>
-          Summer 2026, Rangeland Ecology Lab. Vegetation monitoring for the
-          Sagebrush Steppe Treatment Evaluation Project (SageSTEP) and a targeted sheep-grazing study
-          in Idaho: line-point intercept, canopy and basal gap, plant density, biomass, shrub volume
-          and soil stability.
+          Hidden Markov models of movement let you choose the number of behavior states, and the
+          usual criteria pick too many. With the cattle accelerometer labels I could check the
+          extra states against what the cows were doing. Pohle and others (2017) had already made
+          the main point, so this became a paragraph in the behavior paper instead of its own
+          project.
         </p>
+      </article>
+
+      <article class="item">
+        <h3>Rebuilding gridMET's fire danger index</h3>
         <p>
-          2024 to 2025, Wildlife Ecology Lab. Pygmy rabbit camera and vegetation
-          surveys, mule deer collar retrievals and mortality investigations, and cementum annuli
-          aging.
+          gridMET publishes a daily energy release component (ERC), a standard fire-danger number,
+          but doesn't say exactly how it's computed. I rewrote it from the 1978 National Fire
+          Danger Rating System equations. It matches on dry days. To match on wet days I had to set
+          fine-fuel moisture to 16%, which isn't documented anywhere I could find.
+        </p>
+      </article>
+
+      <article class="item">
+        <h3>A fuel layer for Great Basin annual grass</h3>
+        <p>
+          The plan was a map of annual-grass fuel condition that carries over litter from earlier
+          years. BLM already makes something close to it (Smith 2022), so I stopped there.
+        </p>
+      </article>
+    </div>
+
+    <h2 id="field">Fieldwork</h2>
+    <div class="list">
+      <article class="item">
+        <h3>Summer 2026, Rangeland Ecology Lab</h3>
+        <p>
+          Vegetation monitoring for SageSTEP and a targeted sheep-grazing study in Idaho:
+          line-point intercept, gap intercept, plant density, biomass, shrub volume and soil
+          stability.
+        </p>
+      </article>
+      <article class="item">
+        <h3>2024 to 2025, Wildlife Ecology Lab</h3>
+        <p>
+          Pygmy rabbit camera and vegetation surveys, mule deer collar retrievals and mortality
+          investigations, and aging deer from tooth cementum.
         </p>
       </article>
     </div>
