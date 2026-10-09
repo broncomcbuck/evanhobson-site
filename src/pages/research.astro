@@ -4,7 +4,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
 <BaseLayout
   title="Research | Evan Hobson"
-  description="Ecological modeling projects, current and unfinished."
+  description="Current research by Evan Hobson."
 >
   <section class="page">
     <h1>Research</h1>
@@ -13,10 +13,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       choices that go into a model, like which data layer or which method, change what it says.
     </p>
 
-    <h2>Current</h2>
     <div class="list">
       <article class="item" id="cattle-rsf">
-        <h3>Cattle and cheatgrass</h3>
+        <h2>Cattle and cheatgrass</h2>
         <p class="meta">Lead author · manuscript with coauthors</p>
         <p>
           One way to fight cheatgrass is to turn cattle out in the fall to graze it down. That only
@@ -32,102 +31,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       </article>
     </div>
 
-    <h2>On hold</h2>
-    <div class="list">
-      <article class="item" id="states">
-        <h3>What the cows were doing</h3>
-        <p>
-          The collars also had accelerometers, so each location comes with a guess at behavior:
-          grazing, resting or walking. I want to know whether cows pick places differently
-          depending on what they're doing there. This is waiting on the original behavior labels
-          from the study that collected the data.
-        </p>
-      </article>
-
-      <article class="item" id="horses">
-        <h3>Feral horses in northwestern Nevada</h3>
-        <p class="meta">Lead author</p>
-        <p>
-          Older GPS data from 11 horses, with fixes every 30 minutes. I measured how far they moved
-          each day and how much ground they covered, and how that changed with season and water.
-          Paused until there's a clearer plan for the paper.
-        </p>
-      </article>
-    </div>
-
-    <h2 id="notebook">Notebook</h2>
-    <p>
-      Projects I took partway and stopped. Most stopped because I found someone had already done
-      the important part.
-    </p>
-    <div class="list">
-      <article class="item">
-        <h3>From individual step choices to population maps</h3>
-        <p>
-          Step-selection models are fit to individual animals, but managers want a map for the
-          population. I worked out how much is lost by averaging individuals, and tested it on Ya
-          Ha Tinda elk data. Fieberg and others (2009) had already covered the core idea. One puzzle
-          is left: the plain average-animal map predicted held-out elk better than the corrected
-          ones.
-        </p>
-      </article>
-
-      <article class="item">
-        <h3>How often should a collar take a fix?</h3>
-        <p>
-          I tried to build a calculator for choosing a GPS fix interval for step-selection studies.
-          The cattle data suggested a best interval. It didn't hold up on fisher or zebra data, so I
-          stopped. Along the way I found two bugs in the <code>amt</code> R package.
-        </p>
-      </article>
-
-      <article class="item">
-        <h3>How many behavior states?</h3>
-        <p>
-          Hidden Markov models of movement let you choose the number of behavior states, and the
-          usual criteria pick too many. With the cattle accelerometer labels I could check the
-          extra states against what the cows were doing. Pohle and others (2017) had already made
-          the main point, so this became a paragraph in the behavior paper instead of its own
-          project.
-        </p>
-      </article>
-
-      <article class="item">
-        <h3>Rebuilding gridMET's fire danger index</h3>
-        <p>
-          gridMET publishes a daily energy release component (ERC), a standard fire-danger number,
-          but doesn't say exactly how it's computed. I rewrote it from the 1978 National Fire
-          Danger Rating System equations. It matches on dry days. To match on wet days I had to set
-          fine-fuel moisture to 16%, which isn't documented anywhere I could find.
-        </p>
-      </article>
-
-      <article class="item">
-        <h3>A fuel layer for Great Basin annual grass</h3>
-        <p>
-          The plan was a map of annual-grass fuel condition that carries over litter from earlier
-          years. BLM already makes something close to it (Smith 2022), so I stopped there.
-        </p>
-      </article>
-    </div>
-
-    <h2 id="field">Fieldwork</h2>
-    <div class="list">
-      <article class="item">
-        <h3>Summer 2026, Rangeland Ecology Lab</h3>
-        <p>
-          Vegetation monitoring for SageSTEP and a targeted sheep-grazing study in Idaho:
-          line-point intercept, gap intercept, plant density, biomass, shrub volume and soil
-          stability.
-        </p>
-      </article>
-      <article class="item">
-        <h3>2024 to 2025, Wildlife Ecology Lab</h3>
-        <p>
-          Pygmy rabbit camera and vegetation surveys, mule deer collar retrievals and mortality
-          investigations, and aging deer from tooth cementum.
-        </p>
-      </article>
-    </div>
+    <p class="more">Field and lab experience is on the <a href="/cv">CV</a>.</p>
   </section>
 </BaseLayout>
