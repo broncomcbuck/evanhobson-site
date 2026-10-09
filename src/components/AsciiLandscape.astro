@@ -461,6 +461,29 @@
   let weatherTimer: ReturnType<typeof setTimeout> | null = null;
   const activeIntervals: ReturnType<typeof setInterval>[] = [];
 
+  // Hard cap on transient sprites, and the selector that finds them.
+  // Precipitation is excluded: it is a fixed set that loops in place.
+  const MAX_SPRITES = 6;
+  const SPRITES = ".wx-bird, .wx-cloud, .wx-leaf";
+
+  // Remove a sprite when its animation ends, or after a fallback timeout
+  // in case it never does. Browsers pause CSS animations in background
+  // tabs, so animationend alone let sprites pile up.
+  function retire(el: HTMLElement, durS: number, delayS: number, interval?: ReturnType<typeof setInterval>) {
+    const done = () => {
+      if (interval) clearInterval(interval);
+      el.remove();
+    };
+    el.addEventListener("animationend", done, { once: true });
+    setTimeout(done, (durS + delayS + 1) * 1000);
+  }
+
+  function clearSprites(layer: HTMLElement) {
+    for (const t of activeIntervals) clearInterval(t);
+    activeIntervals.length = 0;
+    layer.querySelectorAll(SPRITES).forEach((el) => el.remove());
+  }
+
   function clearWeather(layer: HTMLElement | null) {
     if (weatherTimer) {
       clearTimeout(weatherTimer);
@@ -482,13 +505,15 @@
       const bird = document.createElement("span");
       bird.className = "wx-bird" + (soaring ? " wx-bird-soar" : "");
       bird.style.top = rand(2, skyMaxPct) + "%";
-      bird.style.animationDuration = (soaring ? rand(16, 24) : rand(9, 15)) + "s";
-      bird.style.animationDelay = rand(0, 2) + "s";
+      const dur = soaring ? rand(16, 24) : rand(9, 15);
+      const delay = rand(0, 2);
+      bird.style.animationDuration = dur + "s";
+      bird.style.animationDelay = delay + "s";
       layer.appendChild(bird);
 
       if (soaring) {
         bird.textContent = "V";
-        bird.addEventListener("animationend", () => bird.remove());
+        retire(bird, dur, delay);
       } else {
         const frames = ["v", "-", "^", "-"];
         let fi = 0;
@@ -498,10 +523,7 @@
           bird.textContent = frames[fi];
         }, 180);
         activeIntervals.push(flap);
-        bird.addEventListener("animationend", () => {
-          clearInterval(flap);
-          bird.remove();
-        });
+        retire(bird, dur, delay, flap);
       }
     }
   }
@@ -512,10 +534,11 @@
     cloud.className = "wx-cloud";
     cloud.textContent = pick(shapes);
     cloud.style.top = rand(2, Math.max(4, skyMaxPct * 0.75)) + "%";
-    cloud.style.animationDuration = rand(28, 50) + "s";
+    const dur = rand(28, 50);
+    cloud.style.animationDuration = dur + "s";
     cloud.style.setProperty("--bob", rand(-3, 3).toFixed(1) + "%");
     layer.appendChild(cloud);
-    cloud.addEventListener("animationend", () => cloud.remove());
+    retire(cloud, dur, 0);
   }
 
   // Persistent for the whole visit — no cleanup timer. Cleared only
@@ -552,8 +575,10 @@
       const glyphs = pick(glyphSets);
       leaf.textContent = glyphs[0];
       leaf.style.top = rand(50, 78) + "%";
-      leaf.style.animationDuration = rand(3.5, 5.5) + "s";
-      leaf.style.animationDelay = rand(0, 2.2) + "s";
+      const dur = rand(3.5, 5.5);
+      const delay = rand(0, 2.2);
+      leaf.style.animationDuration = dur + "s";
+      leaf.style.animationDelay = delay + "s";
       layer.appendChild(leaf);
 
       let gi = 0;
@@ -562,11 +587,7 @@
         leaf.textContent = glyphs[gi];
       }, 160);
       activeIntervals.push(flutter);
-
-      leaf.addEventListener("animationend", () => {
-        clearInterval(flutter);
-        leaf.remove();
-      });
+      retire(leaf, dur, delay, flutter);
     }
   }
 
@@ -584,7 +605,8 @@
   ) {
     const delay = rand(4500, 11000);
     weatherTimer = setTimeout(() => {
-      if (Math.random() < 0.65 && biome.weather.length > 0) {
+      const busy = layer.querySelectorAll(SPRITES).length >= MAX_SPRITES;
+      if (!document.hidden && !busy && Math.random() < 0.65 && biome.weather.length > 0) {
         const kind = pick(biome.weather);
         if (kind === "birds") spawnBirds(layer, skyMaxPct);
         else if (kind === "cloud") spawnCloud(layer, skyMaxPct);
@@ -663,6 +685,11 @@
       scheduleNextWeather(weatherLayer, biome, cols, rows, skyMaxFrac * 100);
     }
   }
+
+  document.addEventListener("visibilitychange", () => {
+    const layer = document.getElementById("ascii-landscape-weather");
+    if (document.hidden && layer) clearSprites(layer);
+  });
 
   let resizeTimer: ReturnType<typeof setTimeout>;
   window.addEventListener("resize", () => {
