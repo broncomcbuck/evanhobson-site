@@ -1,36 +1,43 @@
-
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
-<BaseLayout title="Projects — Evan Hobson">
+<BaseLayout
+  title="Projects | Evan Hobson"
+  description="Side projects: Game of Life ash statistics and a scripture text-analysis script."
+>
   <section class="page">
     <h1>Projects</h1>
-
-    <p class="intro">
-      Projects are exploratory investigations pursued with technical rigor but outside
-      the scope of formal research programs.
-    </p>
+    <p class="intro">Things I built outside of lab work. The code for both is on GitHub.</p>
 
     <div class="list">
       <article class="item">
-        <h2>Game of Life ash distribution</h2>
+        <h2>Game of Life ash</h2>
+        <p class="meta">Python · 2026 · <a href="https://github.com/broncomcbuck/gol-ash-project">repository</a></p>
         <p>
-          A computational investigation into the distribution, structure, and frequency
-          of ash produced by random Game of Life soups.
+          In Conway's Game of Life, a random starting grid (a "soup") eventually settles into stable
+          and repeating objects called ash. Catagolue has counted ash from hundreds of trillions of
+          soups, but always at 16×16 cells and 50% density. I varied soup size from 8 to 64 cells and
+          density from 0.1 to 0.9 and described the ash with the same tools ecologists use for
+          species counts: richness, Shannon entropy and rank-abundance curves.
         </p>
-        <p class="meta">Focus: simulation, pattern analysis</p>
+        <p>
+          Across all 63 size and density combinations, Shannon entropy moved by only 0.04 bits, and
+          time to stabilize grew with the side length of the grid rather than its area. A 630,000-soup
+          rerun corrected a boundary bug that had inflated the share of soups that never settle.
+        </p>
       </article>
 
       <article class="item">
-        <h2>Computational ecology experiments</h2>
+        <h2>Emotion attributed to God in the Book of Mormon</h2>
+        <p class="meta">Python · <a href="https://github.com/broncomcbuck/bomproject">repository</a></p>
         <p>
-          Small-scale modeling and simulation work exploring spatial processes,
-          emergence, and abstraction in ecological systems.
+          A script that finds verses where an emotion is attributed to God, not just verses where
+          "God" and an emotion word both appear. It matches on attribution patterns ("God's wrath",
+          a God term followed by an emotion term) instead of word proximity. It has no model of
+          negation or reported speech, so its output is a list of verses to read, not a measurement.
         </p>
-        <p class="meta">Status: ongoing</p>
       </article>
     </div>
   </section>
 </BaseLayout>
-

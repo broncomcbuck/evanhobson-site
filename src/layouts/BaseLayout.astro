@@ -4,8 +4,8 @@ import NavBar from "../components/NavBar.astro";
 import AsciiLandscape from "../components/AsciiLandscape.astro";
 
 const {
-  title = "Evan Hobson — Ecological Modeling",
-  description = "Ecological modeling, wildlife movement, and computational analysis by Evan Hobson.",
+  title = "Evan Hobson",
+  description = "Evan Hobson, BYU student in quantitative ecology and ecological modeling.",
   canonical,
 } = Astro.props;
 
@@ -62,9 +62,9 @@ const canonicalUrl =
     <footer class="site-footer">
       <div class="site-footer-inner">
         <span>&copy; {new Date().getFullYear()} Evan Hobson</span>
-        <span class="sep">•</span>
+        <span class="sep">·</span>
         <a href="mailto:evanjhobson@gmail.com">evanjhobson@gmail.com</a>
-        <span class="sep">•</span>
+        <span class="sep">·</span>
         <a href="https://github.com/broncomcbuck" target="_blank" rel="noopener noreferrer">GitHub</a>
       </div>
     </footer>
@@ -112,8 +112,7 @@ const canonicalUrl =
     align-items: center;
     justify-content: center;
     gap: 0.6rem;
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     color: var(--ink-2);
     text-align: center;
   }

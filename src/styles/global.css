@@ -1,13 +1,8 @@
 /* =======================================================
    DESIGN TOKENS
-   GPS-telemetry / topo-survey visual identity: warm paper,
-   monospace-forward, hard edges (no radius, no drop shadow),
-   glyph-only accents. Old token names (--bg, --surface, --text,
-   --border, --accent, --shadow, --r-lg, --r-xl, --font-sans) are
-   kept as aliases onto the new palette so existing per-page
-   styles that reference them still work without being rewritten
-   one by one — --shadow resolves to "none" and the radii resolve
-   to 0 specifically so those old rules become harmless no-ops.
+   Warm paper and ink, serif text, square edges. The old
+   token names (--bg, --text, --accent and so on) are kept as
+   aliases because some page styles still use them.
    ======================================================= */
 
 :root {
@@ -25,7 +20,6 @@
   --font-serif: Charter, "Iowan Old Style", Georgia, "Palatino Linotype", serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
-  /* aliases for the old token names still referenced by per-page styles */
   --bg: var(--paper-2);
   --surface: var(--paper);
   --surface-2: var(--paper-2);
@@ -41,7 +35,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --paper: #14130d;
     --paper-2: #1c1a11;
     --ink: #e8ddc0;
@@ -61,16 +55,6 @@
   --wood: #8aa374;
   --water: #6fabc2;
   --line: #322e1e;
-}
-:root[data-theme="light"] {
-  --paper: #e6dcc0;
-  --paper-2: #ddd0ab;
-  --ink: #241f18;
-  --ink-2: #564c3c;
-  --contour: #8a5a34;
-  --wood: #57684a;
-  --water: #3f7186;
-  --line: #b9a97d;
 }
 
 /* ======================================================= */
@@ -113,7 +97,13 @@ body {
 }
 
 a {
-  color: inherit;
+  color: var(--water);
+  text-decoration-color: color-mix(in oklab, var(--water) 45%, transparent);
+  text-underline-offset: 0.18em;
+}
+
+a:hover {
+  text-decoration-color: var(--water);
 }
 
 ::selection {
@@ -125,6 +115,7 @@ h2,
 h3,
 h4 {
   color: var(--ink);
+  font-weight: 600;
 }
 
 p,
@@ -137,121 +128,83 @@ li {
 }
 
 .container {
-  width: min(1100px, calc(100% - 3rem));
+  width: min(1100px, calc(100% - 2rem));
   margin-inline: auto;
 }
 
-/* ===== Paper-grain texture — a very faint noise texture (SVG
-   feTurbulence, inlined as a data URI) over the base page color, so
-   the whole site reads a little more like paper/print than a flat
-   digital surface. Two variants: dark flecks on the light paper,
-   light flecks on the dark paper. Both bake their own alpha down to
-   ~0.05-0.06 inside the SVG's feColorMatrix, so no extra CSS opacity
-   is layered on top. ===== */
-html,
-body {
-  background:
-    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27180%27%20height%3D%27180%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.85%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27matrix%27%20values%3D%270%200%200%200%200%20%200%200%200%200%200%20%200%200%200%200%200%20%200%200%200%200.05%200%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27%2F%3E%3C%2Fsvg%3E") repeat,
-    var(--paper-2);
-}
-:root[data-theme="dark"] html,
-:root[data-theme="dark"] body,
-html[data-theme="dark"],
-html[data-theme="dark"] body {
-  background:
-    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27180%27%20height%3D%27180%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.85%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27matrix%27%20values%3D%270%200%200%200%201%20%200%200%200%200%201%20%200%200%200%200%201%20%200%200%200%200.06%200%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27%2F%3E%3C%2Fsvg%3E") repeat,
-    var(--paper-2);
-}
-@media (prefers-color-scheme: dark) {
-  html,
-  body {
-    background:
-      url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27180%27%20height%3D%27180%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.85%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27matrix%27%20values%3D%270%200%200%200%201%20%200%200%200%200%201%20%200%200%200%200%201%20%200%200%200%200.06%200%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27%2F%3E%3C%2Fsvg%3E") repeat,
-      var(--paper-2);
-  }
-}
-:root[data-theme="light"] html,
-:root[data-theme="light"] body {
-  background:
-    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27180%27%20height%3D%27180%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.85%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27matrix%27%20values%3D%270%200%200%200%200%20%200%200%200%200%200%20%200%200%200%200%200%20%200%200%200%200.05%200%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27%2F%3E%3C%2Fsvg%3E") repeat,
-    var(--paper-2);
-}
-
 /* ======================================================= */
-/* CONTENT PAGES (About / Research / Projects / Writing)    */
+/* CONTENT PAGES                                            */
 /* ======================================================= */
 
 .page {
-  width: min(900px, calc(100% - 3rem));
-  margin: 0 auto;
-  padding: clamp(2.5rem, 5vw, 4rem) 0;
+  width: min(820px, 100%);
+  margin: clamp(1.5rem, 4vw, 3rem) auto;
+  padding: clamp(1.4rem, 3vw, 2.4rem);
   position: relative;
   z-index: 2;
-}
-
-.page h1 {
-  font-family: var(--font-serif);
-  font-size: clamp(2.1rem, 3.5vw, 2.8rem);
-  margin: 0 0 0.75rem;
-  color: var(--ink);
-}
-
-.page .intro {
-  max-width: 75ch;
-  margin: 0 0 2rem;
-  font-size: 1.08rem;
-  line-height: 1.75;
-  color: var(--ink-2);
-}
-
-.list {
-  display: grid;
-  gap: 1.1rem;
-}
-
-.item {
-  padding: 1.25rem 1.3rem 1.35rem;
   background: var(--paper);
   border: 1px solid var(--ink);
 }
 
-.item h2 {
+.page h1 {
   font-family: var(--font-serif);
-  font-size: 1.35rem;
-  margin: 0 0 0.5rem;
+  font-size: clamp(1.9rem, 3.2vw, 2.4rem);
+  margin: 0 0 0.75rem;
   color: var(--ink);
+  line-height: 1.15;
+}
+
+.page h2 {
+  font-size: 1.3rem;
+  margin: 2rem 0 0.6rem;
+}
+
+.page .intro {
+  max-width: 68ch;
+  margin: 0 0 1.6rem;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.page p {
+  max-width: 68ch;
+  margin: 0 0 1rem;
+  line-height: 1.7;
+}
+
+.list {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+
+.item {
+  padding: 1.2rem 0 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.item h2,
+.item h3 {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  margin: 0 0 0.35rem;
+  color: var(--ink);
+  line-height: 1.35;
 }
 
 .item p {
   margin: 0 0 0.5rem;
   line-height: 1.7;
-  color: var(--ink-2);
 }
 
-.item p:last-of-type {
-  margin-bottom: 0.75rem;
+.item p:last-child {
+  margin-bottom: 0;
 }
 
 .item .meta {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  letter-spacing: 0.02em;
+  font-size: 0.92rem;
+  font-style: italic;
   color: var(--ink-2);
-}
-
-.item a {
-  display: inline-block;
-  margin-top: 0.4rem;
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  font-weight: 700;
-  text-decoration: none;
-  color: var(--water);
-  border-bottom: 1px solid color-mix(in oklab, var(--water) 45%, transparent);
-}
-
-.item a:hover {
-  border-bottom-color: var(--water);
 }
 
 /* ======================================================= */
@@ -266,53 +219,8 @@ html[data-theme="dark"] body {
   border: 1px solid var(--ink);
 }
 
-.kicker {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-2);
-  font-weight: 700;
-}
-
-.tag {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--ink-2);
-  border: 1px solid var(--line);
-  padding: 0.22rem 0.5rem;
-}
-
-.start-head h2 {
-  color: var(--ink);
-}
-
-.start-head p {
-  color: var(--ink-2);
-}
-
-.textlink,
-.go,
-.back,
-.essay-link {
-  color: var(--water) !important;
-  border-bottom-color: color-mix(in oklab, var(--water) 45%, transparent) !important;
-}
-
-.textlink:hover,
-.go:hover,
-.back:hover,
-.essay-link:hover {
-  border-bottom-color: var(--water) !important;
-}
-
 /* ======================================================= */
-/* ASCII landscape — palette lives scoped to the component
-   itself (src/components/AsciiLandscape.astro), keyed off
-   [data-biome]. Layout/positioning rules live there too, since
-   the component now owns a single full-page absolute scene
-   rather than an in-flow footer strip.
+/* ASCII landscape: palette and layout live in
+   src/components/AsciiLandscape.astro, keyed off
+   [data-biome].
    ======================================================= */

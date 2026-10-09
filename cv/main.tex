@@ -1,0 +1,216 @@
+\documentclass[11pt]{article}
+
+%====================
+% PACKAGES
+%====================
+\usepackage[margin=1in]{geometry}
+\usepackage{iftex}
+\ifPDFTeX\usepackage[T1]{fontenc}\fi
+\usepackage{ebgaramond}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{microtype}
+
+\setlength{\parindent}{0pt}
+\setlist[itemize]{noitemsep, topsep=1.5pt, leftmargin=*}
+\emergencystretch=2em
+
+%====================
+% SECTION FORMATTING
+%====================
+\titleformat{\section}
+  {\LARGE\bfseries}
+  {}
+  {0em}
+  {}
+
+\titlespacing*{\section}
+  {0pt}
+  {1.8ex}
+  {0.9ex}
+
+\titleformat{\subsection}
+  {\large\bfseries}
+  {}
+  {0em}
+  {}
+
+\titlespacing*{\subsection}
+  {0pt}
+  {1.4ex}
+  {0.6ex}
+
+\begin{document}
+
+%====================
+% HEADER
+%====================
+\begin{center}
+{\Huge\bfseries Evan Hobson}
+
+\vspace{0.25em}
+
+\href{mailto:evanjhobson@gmail.com}{evanjhobson@gmail.com} \;|\;
+\href{https://github.com/broncomcbuck}{github.com/broncomcbuck} \;|\;
+\href{https://evanhobson.com}{evanhobson.com}
+\end{center}
+
+\vspace{0.8em}
+
+%====================
+% EDUCATION
+%====================
+\section*{Education}
+
+\textbf{Brigham Young University}, Provo, Utah \hfill 2021 -- Present \\
+B.S. Wildlife \& Wildlands Conservation \hfill \textit{Expected Graduation: April 2027}
+
+\vspace{0.45em}
+
+\textbf{Focus:} Quantitative ecology, statistical and spatial modeling
+
+\vspace{0.35em}
+
+\textbf{Selected Coursework:}
+Geographic Information Systems; Wildlife Behavioral Ecology; Scientific Computing;
+Linear Algebra; Computational Linear Algebra; Data Structures;
+Introductory Computer Programming; Principles of Wildlife \& Fishery Management
+
+%====================
+% RESEARCH INTERESTS
+%====================
+\section*{Research Interests}
+Ecological modeling and statistical inference; spatial modeling; how model specification and
+data-product choices change ecological conclusions; remote sensing of rangeland vegetation;
+habitat selection (RSF/SSF/iSSF); applied management on working landscapes.
+
+%====================
+% RESEARCH EXPERIENCE
+%====================
+\section*{Research Experience}
+
+\subsection*{BYU Rangeland Ecology Lab \hfill Provo, UT}
+\textit{Research Assistant} \hfill Sep 2025 -- Present
+\begin{itemize}
+\item Lead analyst for a GPS-collar study of cattle movement and grazing behavior using resource- and integrated step-selection functions (RSF/iSSF)
+\item Designed and maintained reproducible spatial modeling pipelines (covariate generation, mixed-effects model fitting, cross-validation, spatial prediction) in \textbf{R} and \textbf{ArcGIS}
+\item Analyzed GPS and accelerometer-linked telemetry from \textbf{64 cow-year deployments} (31 cows in 2021, 33 in 2022) on a 998-ha sagebrush steppe allotment in southeastern Idaho (5-min fixes in 2021; 7-min fixes in 2022)
+\item Compared three remote-sensing annual-grass products within identical RSF structures to test whether inferred cattle response to cheatgrass depends on product choice
+\item Produced management-relevant selection maps linking space use to topography, water access, annual grass (cheatgrass) cover, perennial forage, and weather covariates to inform targeted grazing strategies
+\item Conducted vegetation monitoring across two large rangeland field projects (summer 2026): the long-term Sagebrush Steppe Treatment Evaluation Project (SageSTEP) and a targeted sheep-grazing study in Idaho
+\item Measured plant density, biomass, and shrub volume; canopy and basal gap; foliar cover by line-point intercept (BLM AIM); and soil-stability/erosion tests across grass, forb, and shrub functional groups
+\item Awarded \textbf{BYU College Undergraduate Research Award (CURA; \$4,000)} supporting analysis, manuscript preparation, and required conference presentation
+\item Re-established and advanced analysis of legacy feral horse telemetry datasets for manuscript development
+\end{itemize}
+
+\subsection*{BYU Wildlife Ecology Lab \hfill Provo, UT}
+\textit{Research Assistant} \hfill Jul 2024 -- Jul 2025
+\begin{itemize}
+\item Conducted field research on pygmy rabbit (\textit{Brachylagus idahoensis}) ecology, including camera deployment, vegetation sampling, and habitat covariate collection
+\item Assisted with mule deer GPS collar retrievals, mortality investigations, and tissue collection
+\item Performed cementum annuli aging and microscopy-based laboratory workflows
+\end{itemize}
+
+%====================
+% SELECTED RESEARCH PROJECTS
+%====================
+\section*{Selected Research Projects}
+
+\subsection*{Cattle Resource Selection in Cheatgrass-Invaded Rangelands \hfill 2025 -- Present}
+\begin{itemize}
+\item Lead analyst evaluating cattle use of cheatgrass during dormant-season targeted grazing on sagebrush steppe in southeastern Idaho
+\item Built three canonical RSFs with identical structure, substituting only the cheatgrass covariate, to test whether inference depends on remote-sensing product (RAP 10-m invasive annual grass, RAP 30-m annual forb-and-grass, USGS REPMS \textit{Bromus tectorum})
+\item Fit binomial GLMMs (glmmTMB) with a per-cow-year random cheatgrass slope and year interaction; modeled elevation, slope, northness, distance to water, and perennial forage biomass; validated with cow-grouped cross-validation and the Boyce index
+\item Manuscript with coauthors for review (lead author); target \textit{Rangeland Ecology \& Management}
+\end{itemize}
+
+\subsection*{Accelerometer Behavioral States and Habitat Selection \hfill 2025 -- on hold}
+\begin{itemize}
+\item Testing whether cattle habitat selection differs by accelerometer-derived behavioral state (grazing, resting, walking)
+\item On hold pending the source study's original behavior-label records
+\end{itemize}
+
+\subsection*{Feral Horse Movement and Space Use in Northwestern Nevada \hfill 2025 -- paused}
+\begin{itemize}
+\item Analyzed legacy GPS telemetry from 11 feral horses (30-min fixes; 2 months--2 years)
+\item Quantified daily distance traveled and daily space use using averaged daily minimum convex polygons (MCPs)
+\item Employed MCPs as a non-traditional, derived movement metric rather than for home-range inference
+\item Interpreted movement patterns relative to water availability and seasonal aridity
+\item Manuscript paused (lead author)
+\end{itemize}
+
+%====================
+% RESEARCH OUTPUTS
+%====================
+\section*{Research Outputs}
+
+\textbf{Manuscripts (Lead Author)}
+\begin{itemize}
+\item Hobson, E., et al. \textit{Cattle resource selection in cheatgrass-invaded rangelands during dormant-season grazing}. With coauthors for review; target \textit{Rangeland Ecology \& Management}.
+\item Hobson, E., et al. \textit{Seasonal and monthly variation in feral horse movement and space use in northwestern Nevada}. Paused.
+\end{itemize}
+
+%====================
+% OTHER SCHOLARLY WRITING
+%====================
+\section*{Other Scholarly Writing \& Presentations}
+
+\textbf{Hobson, E.}
+\textit{Permission to Feel, Power to Become: How emotional engagement can enable spiritual growth}. \\
+BYU Student Religion Symposium; accepted for presentation and invited for submission to symposium proceedings (non--peer reviewed).
+
+%====================
+% ADDITIONAL EXPERIENCE
+%====================
+\section*{Additional Experience}
+
+\subsection*{Western North American Naturalist \hfill Provo, UT}
+\textit{Assistant to Editor-in-Chief} \hfill Apr 2025 -- Jan 2026
+\begin{itemize}
+\item Managed dispersal of \textbf{\$10,000+} in grant funds supporting journal operations
+\item Coordinated \textbf{50+ peer reviewers}, improving review turnaround and editorial workflow efficiency
+\item Gained experience with peer review, editorial decision-making, and scientific publishing standards
+\end{itemize}
+
+\subsection*{BYU Mathematics I.T. Department \hfill Provo, UT}
+\textit{Lead Student Computer Specialist} \hfill May 2023 -- Dec 2023
+\begin{itemize}
+\item Led technical support for faculty and applied mathematics labs
+\item Supported Linux system administration and computational lab transitions
+\end{itemize}
+
+%====================
+% TECHNICAL SKILLS
+%====================
+\section*{Technical Skills}
+
+\textbf{Modeling \& Inference:}
+RSF, SSF/iSSF, GLMs and mixed-effects models (glmmTMB), conditional logistic regression,
+use--availability designs, cluster-robust and random-effects inference, cross-validation,
+Boyce index validation, log-RSS, spatial prediction
+
+\vspace{0.1em}
+
+\textbf{GIS \& Spatial Data:}
+ArcGIS; raster/vector workflows; covariate derivation; cartographic outputs
+
+\vspace{0.1em}
+
+\textbf{Programming:}
+R (primary); Python; Bash; Git; exposure to C++ and Julia through coursework
+
+\vspace{0.1em}
+
+\textbf{Telemetry \& Field:}
+GPS collars; accelerometers and behavioral-state classification; camera trapping;
+rangeland vegetation monitoring: line-point intercept (BLM AIM), canopy/basal gap,
+density, biomass, and shrub volume, soil-stability/erosion tests, plant functional-group ID
+
+\vspace{0.1em}
+
+\textbf{Scientific Writing:}
+Manuscript drafting; figures; peer-review workflows
+
+\enlargethispage{\baselineskip}
+\end{document}

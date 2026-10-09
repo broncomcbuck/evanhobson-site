@@ -51,13 +51,12 @@ const isActive = (href) => {
 
 .links {
   display: flex;
-  gap: 1.1rem;
+  flex-wrap: wrap;
+  gap: 0.2rem 1.1rem;
 }
 
 .links a {
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  letter-spacing: 0.02em;
+  font-size: 0.98rem;
   text-decoration: none;
   color: var(--ink-2);
   border-bottom: 2px solid transparent;
@@ -66,13 +65,7 @@ const isActive = (href) => {
 
 .links a.active {
   color: var(--ink);
-  font-weight: 700;
   border-bottom-color: var(--contour);
-}
-
-.links a.active::before {
-  content: "△ ";
-  color: var(--contour);
 }
 
 .theme-toggle {
@@ -87,5 +80,19 @@ const isActive = (href) => {
 
 .theme-toggle:hover {
   background: var(--paper-2);
+}
+
+@media (max-width: 520px) {
+  .nav-inner {
+    width: calc(100% - 2rem);
+  }
+
+  .links {
+    gap: 0.2rem 0.7rem;
+  }
+
+  .links a {
+    font-size: 0.86rem;
+  }
 }
 </style>

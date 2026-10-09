@@ -1,36 +1,36 @@
-
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
-<BaseLayout title="Research — Evan Hobson">
+<BaseLayout
+  title="Research | Evan Hobson"
+  description="Current research by Evan Hobson."
+>
   <section class="page">
     <h1>Research</h1>
-
     <p class="intro">
-      My research focuses on movement ecology and spatial modeling, with an emphasis on
-      mechanistic and data-driven approaches grounded in field observations.
+      I work in April Hulet's Rangeland Ecology Lab at BYU. Most of my work is about how the
+      choices that go into a model, like which data layer or which method, change what it says.
     </p>
 
     <div class="list">
-      <article class="item">
-        <h2>Cattle movement and landscape use</h2>
+      <article class="item" id="cattle-rsf">
+        <h2>Cattle and cheatgrass</h2>
+        <p class="meta">Lead author · manuscript with coauthors</p>
         <p>
-          Analysis of GPS-collared cattle to quantify habitat selection, movement behavior,
-          and responses to heterogeneous rangeland environments.
+          One way to fight cheatgrass is to turn cattle out in the fall to graze it down. That only
+          works if the cows actually go to the cheatgrass. Cows on the Spring Hills allotment near
+          Malad, Idaho, wore GPS collars during fall grazing in 2021 and 2022 as part of a
+          targeted-grazing study.
         </p>
-        <p class="meta">Status: ongoing</p>
-      </article>
-
-      <article class="item">
-        <h2>Feral horse movement ecology</h2>
         <p>
-          Movement analysis of feral horses examining space use, home range structure,
-          and landscape drivers across arid systems.
+          There are several satellite-based maps of cheatgrass cover, and they don't agree. I fit
+          the same habitat-selection model three times, changing only which cheatgrass map goes
+          in, to see how much the answer depends on that choice.
         </p>
-        <p class="meta">Status: ongoing</p>
       </article>
     </div>
+
+    <p class="more">Field and lab experience is on the <a href="/cv">CV</a>.</p>
   </section>
 </BaseLayout>
-
