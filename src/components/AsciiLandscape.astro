@@ -1,16 +1,23 @@
 ---
 // One continuous procedurally generated ASCII scene spanning the
-// entire page: sky/stars at the top, descending through far/mid/near/
-// fore terrain bands to a dense vegetation + wildlife ground band at
+// entire page: sky at the top, descending through far/mid/near/fore
+// terrain bands to a ground band with plants and the odd animal at
 // the bottom. Absolutely positioned (inset:0) inside BaseLayout's
 // .page-wrap, which is sized by real page content plus a reserved
-// .ground-space spacer — see BaseLayout.astro. Regenerated on every
-// load/resize; picks a random biome (pine / desert / steppe) each
-// time, each with its own terrain-shape math, vegetation, and CSS
-// palette (data-biome attr). Single merged character grid so nearer
-// ridges properly occlude farther ones. No background — only the
-// glyphs themselves carry color, the page's own background shows
-// through everywhere else.
+// .ground-space spacer, see BaseLayout.astro.
+//
+// Each page load picks a seed. The seed decides the biome, terrain
+// and plants, so a resize or theme toggle redraws the same place
+// instead of rolling a new one. The site is dark only, so the sky is
+// always a night sky. The visitor's clock and calendar set the moon's
+// position and phase, the light direction, the dawn and dusk tint,
+// which sprites come by (birds by day, bats and meteors at night) and
+// the season (snowline, aspen color, flowers, rabbitbrush bloom).
+//
+// Query parameters for looking at a particular scene:
+//   ?scene=alpine|steppe|juniper|sonoran
+//   &season=spring|summer|fall|winter  &tod=dawn|day|dusk|night
+//   &seed=123  &wx=<sprite kind, see EVENT_KINDS>
 ---
 
 <div class="ascii-landscape" id="ascii-landscape" aria-hidden="true">
@@ -20,401 +27,693 @@
 
 <script>
   type Cell = { ch: string; layer: string } | null;
-  type WeatherKind = "birds" | "leaves" | "cloud";
-  type VegShape = { dx: number; dy: number; ch: string }[];
+  type Grid = Cell[][];
+  type Season = "spring" | "summer" | "fall" | "winter";
+  type Tod = "dawn" | "day" | "dusk" | "night";
+  type TerrainKind = "ridged" | "rolling" | "mesa";
+  type Texture = "hatch" | "stipple" | "strata";
+  type LayerSpec = { kind: TerrainKind; freq: number; amp: number };
+  type ShapeCell = { dx: number; dy: number; ch: string; p: string };
+  type Shape = { cells: ShapeCell[]; w: number; h: number; winter?: Shape; seasons?: Season[] };
 
   type Biome = {
     name: string;
-    ridged: boolean;
-    waveCount: number;
-    freqRange: [number, number];
-    ampScale: number;
-    farMidFlatten: number;
-    farFill: string[];
-    midFill: string[];
-    foreFill: string[];
-    midDetailChar: string;
-    midDetailDensity: number;
-    veg: "tree" | "shrub" | "cactus";
-    vegDensity: number;
-    snowCaps: boolean;
-    grazer: boolean;
-    fence: boolean;
-    weather: WeatherKind[];
-    precip: "snow" | "rain" | null;
+    far: LayerSpec;
+    mid: LayerSpec;
+    near: LayerSpec;
+    fore: LayerSpec;
+    texture: Texture;
+    alpineSnow: boolean;
+    dots: [string, string]; // distant plants on the mid and near slopes
+    dotDensity: number;
+    ground: string; // sparse texture glyphs for the fore band
+    back: Shape[]; // plants along the fore ridge line
+    front: Shape[]; // bigger plants lower in the band, nearer the viewer
+    density: number;
   };
 
-  function rand(min: number, max: number) {
-    return Math.random() * (max - min) + min;
+  // ===== Randomness. Scene generation draws from a seeded generator so
+  // the same seed always paints the same place; sprites use
+  // Math.random since their timing should differ every visit.
+  function mulberry32(a: number) {
+    return () => {
+      a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  let rng = Math.random;
+  const r = (min: number, max: number) => rng() * (max - min) + min;
+  const pickR = <T,>(arr: T[]): T => arr[Math.floor(rng() * arr.length)];
+  const rand = (min: number, max: number) => Math.random() * (max - min) + min;
+  const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+
+  function hash2(x: number, y: number, s: number) {
+    let h = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(s, 1442695041)) | 0;
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    h ^= h >>> 16;
+    return (h >>> 0) / 4294967296;
   }
 
-  function pick<T>(arr: T[]): T {
-    return arr[Math.floor(Math.random() * arr.length)];
+  // 1D value noise with smoothstep interpolation, and fractal sums of
+  // it. Unlike a sum of sines it never repeats across the width.
+  function noise1(t: number, seed: number) {
+    const i = Math.floor(t);
+    const f = t - i;
+    const a = hash2(i, 7, seed);
+    const b = hash2(i + 1, 7, seed);
+    return a + (b - a) * f * f * (3 - 2 * f);
   }
+  function fbm(t: number, seed: number, oct: number) {
+    let s = 0, a = 1, norm = 0, f = 1;
+    for (let o = 0; o < oct; o++) {
+      s += a * noise1(t * f, seed + o * 31);
+      norm += a;
+      a *= 0.5;
+      f *= 2.07;
+    }
+    return s / norm;
+  }
+  // Ridged fractal noise: folding each octave at its midpoint gives
+  // sharp crests over broad valleys, like a real mountain skyline.
+  function ridgedFbm(t: number, seed: number, oct: number) {
+    let s = 0, a = 1, norm = 0, f = 1;
+    for (let o = 0; o < oct; o++) {
+      const v = 1 - Math.abs(2 * noise1(t * f, seed + o * 31) - 1);
+      s += a * v * v;
+      norm += a;
+      a *= 0.48;
+      f *= 2.13;
+    }
+    return s / norm;
+  }
+  const smoothstep = (a: number, b: number, v: number) => {
+    const t = clamp((v - a) / (b - a), 0, 1);
+    return t * t * (3 - 2 * t);
+  };
+
+  // ===== Shapes. Each is drawn as plain text with a paint key of the
+  // same shape: one letter per glyph naming its color layer. A single
+  // letter paints the whole shape. The bottom row sits on the ground.
+  // g plant, d second plant color, b bark, w pale bark, y crown (green,
+  // gold in fall), f yellow flower, p purple flower, r red flower,
+  // R rabbitbrush (gold in late summer and fall), c cheatgrass,
+  // a animal, t built, k rock (same color as the layer it sits on),
+  // n lit window.
+  function S(art: string[], paint: string | string[], extra: Partial<Shape> = {}): Shape {
+    const h = art.length;
+    const w = Math.max(...art.map((l) => l.length));
+    const ax = Math.floor((w - 1) / 2);
+    const cells: ShapeCell[] = [];
+    art.forEach((line, row) => {
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === " ") continue;
+        let p = typeof paint === "string" ? paint : (paint[row] || "")[i] || " ";
+        if (p === " ") p = typeof paint === "string" ? paint : "g";
+        cells.push({ dx: i - ax, dy: row - (h - 1), ch, p });
+      }
+    });
+    return { cells, w, h, ...extra };
+  }
+
+  const MIRROR: Record<string, string> = { "/": "\\", "\\": "/", "(": ")", ")": "(", "<": ">", ">": "<", "[": "]", "]": "[", "{": "}", "}": "{", "`": "'", "'": "`", d: "b", b: "d" };
+  function mirror(s: Shape): Shape {
+    return { ...s, cells: s.cells.map((c) => ({ ...c, dx: -c.dx + (s.w % 2 === 0 ? 1 : 0), ch: MIRROR[c.ch] || c.ch })) };
+  }
+
+  // Alpine
+  const FIR_S = S([" ^ ", "/^\\", " | "], ["ddd", "ddd", " b "]);
+  const FIR_M = S(["  ^  ", " /^\\ ", " /^\\ ", "/^^^\\", "  |  "], ["ddddd", "ddddd", "ddddd", "ddddd", "  b  "]);
+  const FIR_L = S(["   ^   ", "  /^\\  ", "  /^\\  ", " /^^^\\ ", " /^^^\\ ", "/^^^^^\\", "   |   "], ["ddddddd", "ddddddd", "ddddddd", "ddddddd", "ddddddd", "ddddddd", "   b   "]);
+  const ASPEN_BARE = S([" \\ | / ", "  \\|/  ", "   |   ", "   |   "], "w");
+  const ASPEN = S([" .:o:. ", ":o:o:o:", " ':o:' ", "   |   ", "   |   "], ["yyyyyyy", "yyyyyyy", "yyyyyyy", "   w   ", "   w   "], { winter: ASPEN_BARE });
+  const ASPEN_S = S([".o:o.", "'o:o'", "  |  ", "  |  "], ["yyyyy", "yyyyy", "  w  ", "  w  "], { winter: S(["\\|/", " | ", " | "], "w") });
+  const SNAG = S([" \\ | ", "  \\|/", "   | ", "   | "], "b");
+  const SNAG_S = S(["\\|", " |", " |"], "b");
+
+  // Sagebrush steppe
+  const SAGE_L = S([" .:;:. ", ":;:;:;:", " `\\|/' "], ["ggggggg", "ggggggg", " gbbbg "]);
+  const SAGE_M = S([".:;:.", "`\\|/'"], ["ggggg", "gbbbg"]);
+  const SAGE_S = S([".;:.", " \\/ "], ["gggg", " bb "]);
+  const BUNCH = S([" \\|/ ", "\\\\|//"], "d");
+  const BUNCH_S = S(["\\|/"], "d");
+  const RABBITBRUSH = S([".*.*.", "\\\\|//"], ["RRRRR", "ddddd"]);
+  const BALSAMROOT = S(["\\@/", " | "], ["dfd", " d "], { seasons: ["spring", "summer"] });
+  const LUPINE = S(["i", "8", "|"], ["p", "p", "d"], { seasons: ["spring", "summer"] });
+  const PAINTBRUSH = S(["*", "|"], ["r", "d"], { seasons: ["spring", "summer"] });
+  const CHEAT = S([",;,;,"], "c");
+
+  // Pinyon-juniper
+  const JUNIPER = S([" .&&. ", "&&%&&&", "`&&&&'", "  )(  "], ["gggggg", "gggggg", "gggggg", "  bb  "]);
+  const JUNIPER_S = S([".&&.", "&&&&", " )( "], ["gggg", "gggg", " bb "]);
+  const PINYON = S([" .%%. ", "%%%%%%", " %%%% ", "  ||  "], ["dddddd", "dddddd", "dddddd", "  bb  "]);
+
+  // Sonoran
+  const SAGUARO_L = S(["   _   ", "  | |  ", "  | | |", "| | | |", "\\_| |_/", "  | |  ", "  | |  "], "g");
+  const SAGUARO_M = S(["   _   ", "  | |  ", "| | | |", "\\_| |_/", "  | |  "], "g");
+  const SAGUARO_S = S([" _ ", "| |", "| |"], "g");
+  const OCOTILLO = S(["'  '  '", "\\  |  /", " \\ | / ", "  \\|/  "], ["r  r  r", "d  d  d", " d d d ", "  ddd  "]);
+  const BARREL = S([" . ", "(@)"], ["f", "ggg"]);
+  const PEAR = S([" ()", "()()"], "g");
+  const CHOLLA = S([" *%*", "  %*", " *% "], "g");
+  const CREOSOTE = S(["'\\'/'", " \\|/ "], "d");
+
+  // Built things and animals
+  const CABIN = S(["      |=|  ", " _____|_|_ ", "/_________\\", " | [] |  | ", " |____|__| "], ["      ttt  ", " ttttttttt ", "ttttttttttt", " t nn t  t ", " ttttttttt "]);
+  const WINDMILL = S([" \\|/ ", " -o- ", " /|\\>", " /|\\ ", "/ | \\"], "t");
+  const COW = S(["  ____  ,", " (____)'o)", "  || ||  "], "a");
+  const ELK = S(["    \\/", " ___/'", " |  | "], "a");
+  const DEER = S(["   ),", " __/'", " /  \\"], "a");
+  const PRONGHORN = S(["    ;", " ___/'", " / \\ "], "a");
+  const GROUSE = S([" ,~~.", "(@@@)>", "  '' "], ["aaaaa", "affaaa", "  aa "]);
+  const ROADRUNNER = S(["   _,", "__/'>", "  /\\ "], "a");
+  const COYOTE = S(["   ^ ", "  /'\\", "_/ /|", "/ |  "], "a");
 
   const BIOMES: Biome[] = [
     {
-      name: "pine",
-      ridged: true,
-      waveCount: 3,
-      freqRange: [0.9, 2.6],
-      ampScale: 1,
-      farMidFlatten: 1,
-      farFill: [".", ".", ".", "'"],
-      midFill: [":", ":", ":", "-"],
-      foreFill: [",", ",", "'", "."],
-      midDetailChar: "^",
-      midDetailDensity: 0.07,
-      veg: "tree",
-      vegDensity: 0.22,
-      snowCaps: true,
-      grazer: false,
-      fence: false,
-      weather: ["birds", "leaves", "cloud"],
-      precip: "snow",
-    },
-    {
-      name: "desert",
-      ridged: false,
-      waveCount: 2,
-      freqRange: [0.4, 1.1],
-      ampScale: 0.85,
-      farMidFlatten: 0.45,
-      farFill: ["~", "~", "~", "."],
-      midFill: ["~", "~", "~", ":"],
-      foreFill: [".", ",", "~", "."],
-      midDetailChar: "o",
-      midDetailDensity: 0.06,
-      veg: "cactus",
-      vegDensity: 0.1,
-      snowCaps: false,
-      grazer: false,
-      fence: false,
-      weather: ["birds", "cloud"],
-      precip: null,
+      name: "alpine",
+      far: { kind: "ridged", freq: 2.6, amp: 1 },
+      mid: { kind: "ridged", freq: 3.4, amp: 0.9 },
+      near: { kind: "ridged", freq: 2.2, amp: 0.95 },
+      fore: { kind: "rolling", freq: 2.2, amp: 0.55 },
+      texture: "hatch",
+      alpineSnow: true,
+      dots: ["^", "^"],
+      dotDensity: 0.32,
+      ground: ",'.",
+      back: [FIR_S, FIR_S, FIR_M, FIR_M, ASPEN_S, BUNCH_S, SNAG_S],
+      front: [FIR_L, FIR_M, FIR_M, ASPEN, ASPEN, BUNCH, LUPINE, PAINTBRUSH],
+      density: 0.7,
     },
     {
       name: "steppe",
-      ridged: false,
-      waveCount: 2,
-      freqRange: [0.5, 1.2],
-      ampScale: 0.55,
-      farMidFlatten: 1,
-      farFill: [".", ".", ".", "'"],
-      midFill: [":", ":", ":", "-"],
-      foreFill: [",", ",", "'", ";"],
-      midDetailChar: "'",
-      midDetailDensity: 0.08,
-      veg: "shrub",
-      vegDensity: 0.27,
-      snowCaps: false,
-      grazer: true,
-      fence: true,
-      weather: ["birds", "leaves", "cloud"],
-      precip: "rain",
+      far: { kind: "ridged", freq: 1.6, amp: 0.55 },
+      mid: { kind: "rolling", freq: 1.8, amp: 0.45 },
+      near: { kind: "rolling", freq: 1.4, amp: 0.5 },
+      fore: { kind: "rolling", freq: 1.6, amp: 0.4 },
+      texture: "stipple",
+      alpineSnow: false,
+      dots: ["", "."],
+      dotDensity: 0.18,
+      ground: ",'.`",
+      back: [SAGE_S, SAGE_S, SAGE_M, BUNCH_S, BUNCH_S, CHEAT, RABBITBRUSH],
+      front: [SAGE_L, SAGE_L, SAGE_M, BUNCH, RABBITBRUSH, BALSAMROOT, LUPINE, CHEAT],
+      density: 0.8,
+    },
+    {
+      name: "juniper",
+      far: { kind: "mesa", freq: 1.3, amp: 0.8 },
+      mid: { kind: "mesa", freq: 1.9, amp: 0.7 },
+      near: { kind: "rolling", freq: 1.8, amp: 0.65 },
+      fore: { kind: "rolling", freq: 2.0, amp: 0.45 },
+      texture: "strata",
+      alpineSnow: false,
+      dots: [".", "o"],
+      dotDensity: 0.4,
+      ground: ".,'",
+      back: [JUNIPER_S, JUNIPER_S, PINYON, SAGE_S, BUNCH_S, CHEAT],
+      front: [JUNIPER, JUNIPER, PINYON, SAGE_L, SAGE_M, BUNCH, PAINTBRUSH],
+      density: 0.65,
+    },
+    {
+      name: "sonoran",
+      far: { kind: "ridged", freq: 2.2, amp: 0.75 },
+      mid: { kind: "rolling", freq: 2.4, amp: 0.5 },
+      near: { kind: "rolling", freq: 1.5, amp: 0.45 },
+      fore: { kind: "rolling", freq: 1.7, amp: 0.4 },
+      texture: "hatch",
+      alpineSnow: false,
+      dots: ["", "|"],
+      dotDensity: 0.12,
+      ground: "..`,..o.",
+      back: [SAGUARO_S, BARREL, PEAR, CREOSOTE, CREOSOTE, CHOLLA],
+      front: [SAGUARO_L, SAGUARO_M, SAGUARO_M, OCOTILLO, PEAR, BARREL, CHOLLA, CREOSOTE],
+      density: 0.6,
     },
   ];
 
-  // Sum of a few sine waves. Plain sine sum -> smooth rolling terrain.
-  // "Ridged" sum (1 - |sin|) per octave -> sharp cusped peaks over
-  // flatter valleys, the standard trick for jagged mountain silhouettes.
-  function makeWaveFn(waveCount: number, ridged: boolean, freqRange: [number, number]) {
-    const waves = [];
-    for (let i = 0; i < waveCount; i++) {
-      waves.push({
-        freq: rand(freqRange[0], freqRange[1]) * (i + 1),
-        amp: rand(0.4, 1) / (i + 1),
-        phase: rand(0, Math.PI * 2),
-      });
-    }
-    const ampSum = waves.reduce((s, w) => s + w.amp, 0);
-    return (t: number) => {
-      let h = 0;
-      for (const w of waves) {
-        let v = Math.sin(t * Math.PI * 2 * w.freq + w.phase);
-        if (ridged) v = 1 - Math.abs(v);
-        h += v * w.amp;
-      }
-      return h / ampSum;
-    };
+  // ===== Calendar and clock.
+  function seasonOf(month: number): Season {
+    if (month <= 1 || month === 11) return "winter";
+    if (month <= 4) return "spring";
+    if (month <= 7) return "summer";
+    return "fall";
+  }
+  function todOf(hour: number): Tod {
+    if (hour >= 5 && hour < 8) return "dawn";
+    if (hour >= 8 && hour < 17) return "day";
+    if (hour >= 17 && hour < 20) return "dusk";
+    return "night";
+  }
+  // Fraction of the synodic month since a known new moon (0 new, 0.5 full).
+  function moonPhase(now: Date) {
+    const days = (now.getTime() - Date.UTC(2000, 0, 6, 18, 14)) / 86400000;
+    return (((days / 29.530588853) % 1) + 1) % 1;
+  }
+  function moonGlyph(p: number) {
+    if (p < 0.03 || p > 0.97) return "";
+    if (p < 0.22) return ")";
+    if (p < 0.28) return "D";
+    if (p < 0.72) return "O";
+    if (p < 0.78) return "C";
+    return "(";
   }
 
-  function ridgeHeights(
-    cols: number,
-    rows: number,
-    bandMinFrac: number,
-    bandMaxFrac: number,
-    biome: Biome,
-    extraAmpScale = 1
-  ) {
-    const wave = makeWaveFn(biome.waveCount, biome.ridged, biome.freqRange);
-    const bandMin = Math.round(rows * bandMinFrac);
-    const bandMax = Math.round(rows * bandMaxFrac);
-
-    const heights = new Array(cols);
+  // ===== Terrain.
+  function ridgeHeights(spec: LayerSpec, cols: number, rows: number, charW: number, bandMin: number, bandMax: number, seed: number) {
+    const raw = new Array(cols);
     for (let x = 0; x < cols; x++) {
-      const h = wave(x / cols);
-      let top: number;
-      if (biome.ridged) {
-        const amp = (bandMax - bandMin) * extraAmpScale;
-        top = Math.round(bandMax - h * amp);
-      } else {
-        const mid = (bandMin + bandMax) / 2;
-        const amp = ((bandMax - bandMin) / 2) * biome.ampScale * extraAmpScale;
-        top = Math.round(mid - h * amp);
-      }
-      top = Math.max(0, Math.min(rows - 1, top));
-      heights[x] = top;
+      const t = ((x * charW) / 1000) * spec.freq;
+      let h: number;
+      h = spec.kind === "ridged" ? ridgedFbm(t, seed, 4) : fbm(t, seed, 3);
+
+      raw[x] = h;
     }
-    return heights;
+    let lo = Infinity, hi = -Infinity;
+    for (const v of raw) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+    const top0 = Math.round(rows * bandMin);
+    const top1 = Math.round(rows * bandMax);
+    const out = new Array(cols);
+    for (let x = 0; x < cols; x++) {
+      let h = hi > lo ? (raw[x] - lo) / (hi - lo) : 0.5;
+      if (spec.kind === "mesa") {
+        // Terraces: flat benches broken by short steep cliffs.
+        const steps = 2.6;
+        const s = h * steps;
+        const i = Math.floor(s);
+        h = Math.min(1, (i + smoothstep(0.62, 0.86, s - i)) / steps);
+      }
+      out[x] = clamp(Math.round(top1 - h * spec.amp * (top1 - top0)), 0, rows - 1);
+    }
+    return out;
   }
 
-  // bottomBound (optional, per-column) stops the fill where the next
-  // nearer layer is going to start, instead of always filling all the
-  // way to the bottom of the grid — each layer only ever paints the
-  // slice of rows it actually keeps, not the parts every closer layer
-  // is about to overwrite anyway (roughly a 4x reduction in cell
-  // writes for a 4-layer scene).
-  function paintRidge(
-    grid: Cell[][],
-    ridge: number[],
-    cols: number,
-    rows: number,
-    layer: string,
-    fillChars: string[],
-    bottomBound?: number[]
+  // Fill glyph for a terrain cell d rows below its ridge line. Slopes
+  // facing the light get a sparse stipple; slopes facing away get
+  // diagonal hatching (pen and ink), and everything thins out with
+  // depth so a layer reads as a lit edge fading into haze.
+  function texChar(tex: Texture, x: number, y: number, d: number, lit: boolean, dens: number, fade: number, lightLeft: boolean, seed: number, strataOff: number) {
+    const f = Math.max(0.1, 1 - d / fade);
+    const h = hash2(x, y, seed);
+    if (tex === "strata") {
+      if ((y + strataOff) % 3 === 0) return h < (lit ? 0.45 : 0.85) * f * dens + 0.08 ? (lit ? "_" : "-") : " ";
+      return h < (lit ? 0.04 : 0.16) * f * dens ? (lit ? "." : ":") : " ";
+    }
+    if (lit) return h < 0.1 * f * dens ? (h < 0.03 * f * dens ? "'" : ".") : " ";
+    if (tex === "hatch") {
+      // Each diagonal is one unbroken stroke from the ridge down to a
+      // length of its own, like engraved shading.
+      const k = lightLeft ? x - y : x + y;
+      if (((k % 3) + 3) % 3 === 0 && d <= 1 + hash2(k, 3, seed) * Math.min(7, fade * dens * 1.3)) return lightLeft ? "\\" : "/";
+      return h < 0.05 * f * dens ? "." : " ";
+    }
+    return h < 0.42 * f * dens ? (h < 0.12 * f * dens ? ";" : h < 0.27 * f * dens ? ":" : ".") : " ";
+  }
+
+  function paintLayer(
+    grid: Grid, ridge: number[], bottom: number[] | null, layer: string, spec: LayerSpec,
+    tex: Texture, dens: number, fade: number, lightLeft: boolean, seed: number
   ) {
+    const rows = grid.length;
+    const cols = ridge.length;
+    const cliff = spec.kind === "mesa";
     for (let x = 0; x < cols; x++) {
       const top = ridge[x];
       const prev = x > 0 ? ridge[x - 1] : top;
-      let edge = "_";
-      if (top < prev) edge = "/";
-      else if (top > prev) edge = "\\";
-
-      const limit = bottomBound ? Math.min(rows, bottomBound[x]) : rows;
-      for (let y = top; y < limit; y++) {
-        grid[y][x] = { ch: y === top ? edge : pick(fillChars), layer };
+      const next = x < cols - 1 ? ridge[x + 1] : top;
+      const limit = bottom ? Math.min(rows, bottom[x]) : rows;
+      if (top >= limit) continue;
+      const slope = next - prev;
+      const lit = slope === 0 ? true : lightLeft ? slope < 0 : slope > 0;
+      const strataOff = Math.floor(fbm(x * 0.025, seed + 3, 2) * 4);
+      for (let y = top + 1; y < limit; y++) {
+        const ch = texChar(tex, x, y, y - top, lit, dens, fade, lightLeft, seed, strataOff);
+        grid[y][x] = { ch, layer: ch === " " ? "" : layer };
+      }
+      const up = prev > top;
+      const down = next > top;
+      let e = up && down ? (spec.kind === "ridged" ? "^" : "_") : up ? "/" : down ? "\\" : "_";
+      grid[top][x] = { ch: e, layer };
+      // Close the outline on slopes steeper than one row per column.
+      if (prev - top >= 2) {
+        for (let y = top + 1; y < Math.min(prev, limit); y++) grid[y][x] = { ch: cliff ? "|" : "/", layer };
+      }
+      if (next - top >= 2) {
+        for (let y = top + 1; y < Math.min(next, limit); y++) grid[y][x] = { ch: cliff ? "|" : "\\", layer };
       }
     }
   }
 
-  function paintMidDetail(grid: Cell[][], ridge: number[], cols: number, biome: Biome) {
-    const minGap = Math.max(4, Math.floor(cols / (biome.midDetailDensity * 90)));
-    let lastX = -minGap;
-    for (let x = 1; x < cols - 1; x++) {
-      if (x - lastX < minGap) continue;
-      if (Math.random() > biome.midDetailDensity) continue;
+  // Snow on the upper part of a range. The snowline drops in winter.
+  function paintSnow(grid: Grid, ridge: number[], bottom: number[] | null, frac: number) {
+    const lo = Math.min(...ridge);
+    const hi = Math.max(...ridge);
+    const line = lo + (hi - lo) * frac;
+    for (let x = 0; x < ridge.length; x++) {
       const top = ridge[x];
-      grid[top][x] = { ch: biome.midDetailChar, layer: "mid" };
-      lastX = x;
-    }
-  }
-
-  function paintSnowCaps(grid: Cell[][], ridge: number[], cols: number, rows: number) {
-    const peak = Math.min(...ridge);
-    const threshold = peak + 2;
-    for (let x = 0; x < cols; x++) {
-      if (ridge[x] > threshold) continue;
-      const top = ridge[x];
-      grid[top][x] = { ch: "^", layer: "snow" };
-      if (top + 1 < rows) grid[top + 1][x] = { ch: "*", layer: "snow" };
-    }
-  }
-
-  // Evenly spaced fence posts with a top rail — a quick, legible
-  // "this is grazing rangeland" marker along the foreground band.
-  function paintFence(grid: Cell[][], ridge: number[], cols: number) {
-    if (Math.random() > 0.5) return;
-    const postGap = Math.max(5, Math.floor(cols / rand(14, 22)));
-    const startX = Math.floor(rand(2, postGap));
-    let lastPostX: number | null = null;
-    for (let x = startX; x < cols - 2; x += postGap) {
-      const top = ridge[x];
-      if (top - 2 < 0) continue;
-      grid[top - 2][x] = { ch: "|", layer: "fence" };
-      grid[top - 1][x] = { ch: "|", layer: "fence" };
-      if (lastPostX !== null) {
-        for (let rx = lastPostX + 1; rx < x; rx++) {
-          const rTop = ridge[rx];
-          if (rTop - 1 >= 0 && grid[rTop - 1][rx] === null) {
-            grid[rTop - 1][rx] = { ch: "-", layer: "fence" };
-          }
-        }
+      if (top > line) continue;
+      const limit = bottom ? bottom[x] : grid.length;
+      const depth = Math.min(limit - top, 1 + Math.round((line - top) * 0.5));
+      for (let d = 0; d < depth; d++) {
+        const cell = grid[top + d][x];
+        if (d === 0) grid[top][x] = { ch: cell ? cell.ch : "^", layer: "snow" };
+        else grid[top + d][x] = { ch: hash2(x, top + d, 99) < 0.5 ? "'" : ".", layer: "snow" };
       }
-      lastPostX = x;
+    }
+    return line;
+  }
+
+  // Distant trees and shrubs as single glyphs on a slope, clumped by
+  // noise so there are groves and open ground instead of an even rain.
+  function paintDots(grid: Grid, ridge: number[], bottom: number[] | null, ch: string, density: number, snowLine: number, seed: number) {
+    if (!ch || density <= 0) return;
+    for (let x = 1; x < ridge.length - 1; x++) {
+      const clump = fbm(x * 0.06, seed, 2);
+      if (hash2(x, 1, seed) > density * smoothstep(0.35, 0.7, clump) * 1.6) continue;
+      const y = ridge[x] + 1 + Math.floor(hash2(x, 2, seed) * 4);
+      const limit = bottom ? bottom[x] : grid.length;
+      if (y >= limit || y <= snowLine) continue;
+      grid[y][x] = { ch, layer: "farveg" };
     }
   }
 
-  // ===== Vegetation: several genuinely different species per biome
-  // (not size variants of one silhouette), each a list of {dx, dy, ch}
-  // offsets from the ground point (dy negative = upward), with mixed
-  // texture characters rather than one uniform fill glyph so canopies/
-  // bodies read as organic, not a solid block.
-  const MATURE_PINE: VegShape = [
-    { dx: 0, dy: -5, ch: "^" },
-    { dx: -1, dy: -4, ch: "/" }, { dx: 0, dy: -4, ch: "'" }, { dx: 1, dy: -4, ch: "\\" },
-    { dx: -2, dy: -3, ch: "/" }, { dx: -1, dy: -3, ch: "#" }, { dx: 0, dy: -3, ch: "^" }, { dx: 1, dy: -3, ch: "#" }, { dx: 2, dy: -3, ch: "\\" },
-    { dx: -2, dy: -2, ch: "#" }, { dx: -1, dy: -2, ch: "'" }, { dx: 0, dy: -2, ch: "#" }, { dx: 1, dy: -2, ch: "'" }, { dx: 2, dy: -2, ch: "#" },
-    { dx: -3, dy: -1, ch: "/" }, { dx: -2, dy: -1, ch: "#" }, { dx: -1, dy: -1, ch: "#" }, { dx: 0, dy: -1, ch: "#" }, { dx: 1, dy: -1, ch: "#" }, { dx: 2, dy: -1, ch: "#" }, { dx: 3, dy: -1, ch: "\\" },
-    { dx: 0, dy: 0, ch: "|" },
-  ];
-  const YOUNG_PINE: VegShape = [
-    { dx: 0, dy: -2, ch: "^" },
-    { dx: -1, dy: -1, ch: "/" }, { dx: 0, dy: -1, ch: "#" }, { dx: 1, dy: -1, ch: "\\" },
-    { dx: 0, dy: 0, ch: "|" },
-  ];
-  const WIND_PINE: VegShape = [
-    { dx: 1, dy: -3, ch: "^" },
-    { dx: 0, dy: -2, ch: "/" }, { dx: 1, dy: -2, ch: "#" }, { dx: 2, dy: -2, ch: "~" },
-    { dx: -1, dy: -1, ch: "_" }, { dx: 0, dy: -1, ch: "#" }, { dx: 1, dy: -1, ch: "#" }, { dx: 2, dy: -1, ch: "#" }, { dx: 3, dy: -1, ch: "~" },
-    { dx: 0, dy: 0, ch: "|" },
-  ];
-  const ASPEN: VegShape = [
-    { dx: -1, dy: -3, ch: "o" }, { dx: 0, dy: -3, ch: "o" }, { dx: 1, dy: -3, ch: "o" },
-    { dx: -2, dy: -2, ch: "o" }, { dx: -1, dy: -2, ch: "@" }, { dx: 0, dy: -2, ch: "@" }, { dx: 1, dy: -2, ch: "@" }, { dx: 2, dy: -2, ch: "o" },
-    { dx: -1, dy: -1, ch: "@" }, { dx: 0, dy: -1, ch: "@" }, { dx: 1, dy: -1, ch: "@" },
-    { dx: 0, dy: 0, ch: "|" },
-  ];
-  const DEAD_SNAG: VegShape = [
-    { dx: 0, dy: -2, ch: "|" },
-    { dx: 1, dy: -1, ch: "/" }, { dx: 0, dy: -1, ch: "|" }, { dx: -1, dy: -1, ch: "`" },
-    { dx: 0, dy: 0, ch: "|" },
-  ];
+  function crownLayer(season: Season) {
+    return season === "fall" ? "gold" : "veg";
+  }
+  function paintCode(p: string, season: Season) {
+    switch (p) {
+      case "g": return "veg";
+      case "d": return "vegd";
+      case "b": return "bark";
+      case "w": return "pale";
+      case "y": return crownLayer(season);
+      case "f": return "bloom";
+      case "p": return "bloom2";
+      case "r": return "bloom3";
+      case "R": return season === "fall" || season === "summer" ? "gold" : "vegd";
+      case "c": return season === "spring" ? "vegd" : "cheat";
+      case "a": return "fauna";
+      case "t": return "built";
+      case "n": return "glow";
+      default: return "veg";
+    }
+  }
 
-  const SAGE_MOUND: VegShape = [
-    { dx: -1, dy: -2, ch: "*" }, { dx: 0, dy: -2, ch: "*" }, { dx: 1, dy: -2, ch: "*" },
-    { dx: -2, dy: -1, ch: "o" }, { dx: -1, dy: -1, ch: "@" }, { dx: 0, dy: -1, ch: "'" }, { dx: 1, dy: -1, ch: "@" }, { dx: 2, dy: -1, ch: "o" },
-    { dx: -1, dy: 0, ch: "'" }, { dx: 0, dy: 0, ch: "@" }, { dx: 1, dy: 0, ch: "'" },
-  ];
-  const RABBITBRUSH: VegShape = [
-    { dx: 0, dy: -3, ch: "^" }, { dx: 1, dy: -3, ch: "'" },
-    { dx: -1, dy: -2, ch: "|" }, { dx: 0, dy: -2, ch: "^" }, { dx: 1, dy: -2, ch: "|" }, { dx: 2, dy: -2, ch: "'" },
-    { dx: -2, dy: -1, ch: "'" }, { dx: -1, dy: -1, ch: "|" }, { dx: 0, dy: -1, ch: "@" }, { dx: 1, dy: -1, ch: "|" }, { dx: 2, dy: -1, ch: "@" }, { dx: 3, dy: -1, ch: "'" },
-    { dx: -1, dy: 0, ch: "@" }, { dx: 0, dy: 0, ch: "@" }, { dx: 1, dy: 0, ch: "@" },
-  ];
-  const BUNCHGRASS: VegShape = [
-    { dx: -2, dy: -1, ch: "'" }, { dx: -1, dy: -1, ch: "|" }, { dx: 0, dy: -1, ch: "\"" }, { dx: 1, dy: -1, ch: "|" }, { dx: 2, dy: -1, ch: "'" },
-    { dx: -1, dy: 0, ch: "," }, { dx: 0, dy: 0, ch: "," }, { dx: 1, dy: 0, ch: "," },
-  ];
-  const CREEPING_SHRUB: VegShape = [
-    { dx: -3, dy: -1, ch: "'" }, { dx: -2, dy: -1, ch: "o" }, { dx: -1, dy: -1, ch: "@" }, { dx: 0, dy: -1, ch: "@" }, { dx: 1, dy: -1, ch: "@" }, { dx: 2, dy: -1, ch: "o" }, { dx: 3, dy: -1, ch: "'" },
-    { dx: -2, dy: 0, ch: "," }, { dx: -1, dy: 0, ch: "," }, { dx: 0, dy: 0, ch: "," }, { dx: 1, dy: 0, ch: "," }, { dx: 2, dy: 0, ch: "," },
-  ];
-  const WILDFLOWER: VegShape = [
-    { dx: 0, dy: -1, ch: "*" },
-    { dx: 0, dy: 0, ch: "|" },
-  ];
-  const LOW_TUFT: VegShape = [
-    { dx: -1, dy: 0, ch: "'" }, { dx: 0, dy: 0, ch: "\"" }, { dx: 1, dy: 0, ch: "'" },
-  ];
+  function stamp(grid: Grid, shape: Shape, x: number, ground: number, season: Season) {
+    const rows = grid.length;
+    const cols = grid[0].length;
+    for (const c of shape.cells) {
+      const gy = ground + c.dy;
+      const gx = x + c.dx;
+      if (gy < 0 || gy >= rows || gx < 0 || gx >= cols) continue;
+      grid[gy][gx] = { ch: c.ch, layer: paintCode(c.p, season) };
+    }
+  }
 
-  const SAGUARO: VegShape = [
-    { dx: -1, dy: -2, ch: "\\" }, { dx: 0, dy: -2, ch: "|" }, { dx: 1, dy: -2, ch: "/" },
-    { dx: 0, dy: -1, ch: "|" },
-    { dx: 0, dy: 0, ch: "|" },
-  ];
-  const BIG_SAGUARO: VegShape = [
-    { dx: 0, dy: -3, ch: "|" },
-    { dx: -2, dy: -2, ch: "\\" }, { dx: -1, dy: -2, ch: "|" }, { dx: 0, dy: -2, ch: "|" }, { dx: 1, dy: -2, ch: "|" }, { dx: 2, dy: -2, ch: "/" },
-    { dx: -2, dy: -1, ch: "|" }, { dx: 0, dy: -1, ch: "|" }, { dx: 2, dy: -1, ch: "|" },
-    { dx: 0, dy: 0, ch: "|" },
-  ];
-  const OCOTILLO: VegShape = [
-    { dx: -2, dy: -4, ch: "'" }, { dx: 2, dy: -4, ch: "'" },
-    { dx: -2, dy: -3, ch: "|" }, { dx: -1, dy: -3, ch: "'" }, { dx: 1, dy: -3, ch: "'" }, { dx: 2, dy: -3, ch: "|" },
-    { dx: -2, dy: -2, ch: "|" }, { dx: -1, dy: -2, ch: "|" }, { dx: 0, dy: -2, ch: "'" }, { dx: 1, dy: -2, ch: "|" }, { dx: 2, dy: -2, ch: "|" },
-    { dx: -1, dy: -1, ch: "|" }, { dx: 0, dy: -1, ch: "|" }, { dx: 1, dy: -1, ch: "|" },
-    { dx: 0, dy: 0, ch: "Y" },
-  ];
-  const CHOLLA: VegShape = [
-    { dx: -1, dy: -2, ch: "o" }, { dx: 0, dy: -2, ch: "O" }, { dx: 1, dy: -2, ch: "o" },
-    { dx: 0, dy: -1, ch: "8" },
-    { dx: 0, dy: 0, ch: "|" },
-  ];
-  const BARREL_CACTUS: VegShape = [
-    { dx: 0, dy: -1, ch: "O" },
-    { dx: -1, dy: 0, ch: "(" }, { dx: 0, dy: 0, ch: "|" }, { dx: 1, dy: 0, ch: ")" },
-  ];
-  const PAD_CACTUS: VegShape = [
-    { dx: -1, dy: -1, ch: "o" }, { dx: 0, dy: -1, ch: "O" }, { dx: 1, dy: -1, ch: "o" },
-    { dx: -2, dy: 0, ch: "o" }, { dx: -1, dy: 0, ch: "O" }, { dx: 0, dy: 0, ch: "@" }, { dx: 1, dy: 0, ch: "O" }, { dx: 2, dy: 0, ch: "o" },
-  ];
-  const DESERT_SCRUB: VegShape = [
-    { dx: -1, dy: -1, ch: "'" }, { dx: 0, dy: -1, ch: "*" }, { dx: 1, dy: -1, ch: "'" },
-    { dx: 0, dy: 0, ch: "@" },
-  ];
+  function seasonal(shapes: Shape[], season: Season) {
+    const out: Shape[] = [];
+    for (const s of shapes) {
+      if (s.seasons && !s.seasons.includes(season)) continue;
+      out.push(season === "winter" && s.winter ? s.winter : s);
+    }
+    return out;
+  }
 
-  const VEG_SHAPES: Record<Biome["veg"], VegShape[]> = {
-    tree: [MATURE_PINE, MATURE_PINE, YOUNG_PINE, WIND_PINE, ASPEN, ASPEN, DEAD_SNAG],
-    shrub: [SAGE_MOUND, SAGE_MOUND, RABBITBRUSH, BUNCHGRASS, BUNCHGRASS, CREEPING_SHRUB, WILDFLOWER, LOW_TUFT],
-    cactus: [SAGUARO, SAGUARO, BIG_SAGUARO, OCOTILLO, CHOLLA, BARREL_CACTUS, PAD_CACTUS, DESERT_SCRUB],
+  // ===== Main generation. Returns the facts the animated layer needs.
+  type Scene = {
+    biome: Biome;
+    season: Season;
+    tod: Tod;
+    cols: number;
+    rows: number;
+    charW: number;
+    lineH: number;
+    offX: number;
+    offY: number;
+    fore: number[];
+    skyRows: number;
+    stars: [number, number, string][];
+    moon: { x: number; y: number; glyph: string } | null;
+    chimney: [number, number] | null;
+    wind: number;
+    month: number;
+    date: number;
   };
 
-  function stampShape(grid: Cell[][], shape: VegShape, x: number, top: number, rows: number, cols: number, layer: string) {
-    for (const cell of shape) {
-      const gy = top + cell.dy;
-      const gx = x + cell.dx;
-      if (gy < 0 || gy >= rows) continue;
-      if (gx < 1 || gx >= cols - 1) continue;
-      grid[gy][gx] = { ch: cell.ch, layer };
-    }
-  }
+  const params = new URLSearchParams(location.search);
+  const seedParam = parseInt(params.get("seed") || "", 10);
+  const SEED = Number.isFinite(seedParam) ? seedParam : Math.floor(Math.random() * 1e9);
 
-  function paintVegetation(grid: Cell[][], ridge: number[], cols: number, rows: number, biome: Biome) {
-    const shapes = VEG_SHAPES[biome.veg] || [];
-    if (shapes.length === 0) return;
+  function buildScene(wrap: HTMLElement, pre: HTMLElement, groundPx: number): { html: string; scene: Scene } | null {
+    rng = mulberry32(SEED);
+    const now = new Date();
+    const forced = BIOMES.find((b) => b.name === params.get("scene"));
+    const biome = forced || pickR(BIOMES);
+    const month = now.getMonth();
+    const season = (["spring", "summer", "fall", "winter"].includes(params.get("season") || "") ? params.get("season") : seasonOf(month)) as Season;
+    const hour = now.getHours() + now.getMinutes() / 60;
+    const tod = (["dawn", "day", "dusk", "night"].includes(params.get("tod") || "") ? params.get("tod") : todOf(hour)) as Tod;
+    const wind = rng() < 0.7 ? 1 : -1;
 
-    const minGap = Math.max(9, Math.floor(cols / (biome.vegDensity * 36)));
-    let lastX = -minGap;
+    const charW = measure(pre, "#".repeat(20), 20, "w");
+    const lineH = measure(pre, "#\n#\n#\n#\n#", 5, "h");
+    if (!charW || !lineH) return null;
 
-    for (let x = 4; x < cols - 4; x++) {
-      if (x - lastX < minGap) continue;
-      if (Math.random() > biome.vegDensity) continue;
+    const W = wrap.clientWidth;
+    const H = wrap.clientHeight;
+    const cols = clamp(Math.floor(W / charW), 60, 480);
+    const totalRows = Math.round(H / lineH);
+    const rows = clamp(totalRows, 30, 260);
+    // On tall pages the grid is bottom-aligned so the ground always
+    // lands at the foot of the page; the empty sky above needs no cells.
+    const offY = Math.max(0, (totalRows - rows) * lineH);
+    const offX = Math.max(0, (W - cols * charW) / 2);
+    const cf = clamp(1 - groundPx / (rows * lineH), 0.15, 0.92);
+    const g = 1 - cf;
 
-      const shape = pick(shapes);
-      const top = ridge[x];
-      const minDy = Math.min(...shape.map((c) => c.dy));
-      if (top + minDy < 0) continue;
+    const grid: Grid = Array.from({ length: rows }, () => new Array(cols).fill(null));
+    const skyRows = Math.round(rows * cf * 0.55);
 
-      stampShape(grid, shape, x, top, rows, cols, "veg");
-      lastX = x;
-    }
 
-    if (biome.grazer && Math.random() < 0.6) {
-      const x = Math.floor(rand(cols * 0.15, cols * 0.85));
-      const top = ridge[x];
-      grid[top][x] = { ch: "m", layer: "veg" };
-    }
-  }
+    // The moon crosses the sky once a day, rising at the left in the
+    // evening. Its position sets which side of each slope is lit.
+    const u = ((hour + 24 - 18) % 24) / 24;
+    const lightLeft = u < 0.5;
+    const skyX = Math.round(cols * (0.06 + 0.88 * u));
 
-  function paintSky(grid: Cell[][], cols: number, skyRows: number) {
-    const starChars = [".", "*", "'", "`"];
-    const starCount = Math.floor(cols * skyRows * 0.05);
-    for (let i = 0; i < starCount; i++) {
-      const x = Math.floor(rand(0, cols));
-      const y = Math.floor(rand(0, skyRows));
-      if (grid[y][x] === null) {
-        grid[y][x] = { ch: pick(starChars), layer: "star" };
+    const seeds = { far: 11, mid: 23, near: 37, fore: 53 };
+    const far = ridgeHeights(biome.far, cols, rows, charW, cf * 0.3, cf * 0.82, SEED + seeds.far);
+    const mid = ridgeHeights(biome.mid, cols, rows, charW, cf * 0.66, cf + g * 0.42, SEED + seeds.mid);
+    const near = ridgeHeights(biome.near, cols, rows, charW, cf + g * 0.16, cf + g * 0.62, SEED + seeds.near);
+    const fore = ridgeHeights(biome.fore, cols, rows, charW, cf + g * 0.48, cf + g * 0.84, SEED + seeds.fore);
+
+    // Stars, with a rare constellation and, in summer, a Milky Way band.
+    const stars: [number, number, string][] = [];
+    let moon: Scene["moon"] = null;
+    {
+      const milky = season === "summer" && rng() < 0.35;
+      const slope = r(-0.5, 0.5);
+      const count = Math.floor(cols * skyRows * 0.035);
+      for (let i = 0; i < count; i++) {
+        const x = Math.floor(rng() * cols);
+        const y = Math.floor(rng() * skyRows);
+        if (y >= far[x] - 1) continue;
+        const bright = rng() < 0.12;
+        grid[y][x] = { ch: bright ? pickR(["*", "+"]) : pickR([".", ".", "'", "`"]), layer: bright ? "star" : "star2" };
+        if (bright) stars.push([x, y, grid[y][x]!.ch]);
+      }
+      if (milky) {
+        const c0 = cols * r(0.2, 0.8);
+        for (let i = 0; i < count * 0.8; i++) {
+          const y = Math.floor(rng() * skyRows);
+          const x = Math.floor(c0 + (y - skyRows / 2) * slope * 4 + (rng() + rng() + rng() - 1.5) * cols * 0.06);
+          if (x < 0 || x >= cols || y >= far[x] - 1 || grid[y][x]) continue;
+          grid[y][x] = { ch: rng() < 0.7 ? "." : "`", layer: "star2" };
+        }
+      }
+      if (rng() < 0.3) {
+        const sets: Record<string, number[][]> = {
+          winter: [[0, 0], [11, 1], [4, 6], [6, 5], [8, 4], [2, 11], [12, 10]],
+          fall: [[0, 0], [4, 3], [8, 1], [12, 4], [16, 0]],
+          other: [[22, 0], [23, 4], [15, 5], [14, 2], [9, 2], [5, 2], [0, 4]],
+        };
+        const pts = sets[season] || sets.other;
+        const cx = Math.floor(r(cols * 0.04, cols * 0.7));
+        const cy = Math.floor(r(1, Math.max(2, skyRows * 0.4)));
+        for (const [dx, dy] of pts) {
+          const x = cx + dx, y = cy + dy;
+          if (x < cols && y < skyRows && y < far[x] - 1) {
+            grid[y][x] = { ch: "*", layer: "star" };
+            stars.push([x, y, "*"]);
+          }
+        }
+        // Alcor beside Mizar, the old eyesight test.
+        if (pts === sets.other && cy + 1 < skyRows) grid[cy + 1][cx + 5] = { ch: ".", layer: "star" };
       }
     }
-    const gx = Math.floor(rand(cols * 0.08, cols * 0.88));
-    const gy = Math.floor(rand(0, skyRows * 0.5));
-    if (skyRows > 0) grid[gy][gx] = { ch: "O", layer: "glow" };
+
+    const glyph = moonGlyph(moonPhase(now));
+    if (glyph) {
+      const y = Math.round(skyRows * (0.15 + 0.6 * (1 - Math.sin(Math.PI * u))));
+      moon = { x: skyX, y: Math.min(y, far[clamp(skyX, 0, cols - 1)] - 3), glyph };
+    }
+
+    const tex = biome.texture;
+    paintLayer(grid, far, mid, "far", biome.far, tex === "strata" ? "strata" : "stipple", 0.5, 6, lightLeft, SEED + 1);
+    paintLayer(grid, mid, near, "mid", biome.mid, tex, 0.75, 9, lightLeft, SEED + 2);
+    paintLayer(grid, near, fore, "near", biome.near, tex, 1, 12, lightLeft, SEED + 3);
+
+    // Snow: always on alpine peaks, and on the far ranges of every
+    // biome but the Sonoran in winter.
+    const sFrac = { winter: 0.65, spring: 0.4, fall: 0.25, summer: 0.12 }[season];
+    let nearSnow = -1;
+    let midSnow = -1;
+    if (biome.alpineSnow) {
+      paintSnow(grid, far, mid, sFrac + 0.15);
+      midSnow = paintSnow(grid, mid, near, sFrac);
+      nearSnow = paintSnow(grid, near, fore, sFrac * 0.7);
+    } else if (season === "winter" && biome.name !== "sonoran") {
+      paintSnow(grid, far, mid, 0.35);
+    }
+    paintDots(grid, mid, near, biome.dots[0], biome.dotDensity * 0.8, midSnow, SEED + 4);
+    paintDots(grid, near, fore, biome.dots[1], biome.dotDensity, nearSnow, SEED + 5);
+
+    // Ground band: a ridge line and a sparse texture of the local soil.
+    for (let x = 0; x < cols; x++) {
+      const top = fore[x];
+      const prev = x > 0 ? fore[x - 1] : top;
+      const next = x < cols - 1 ? fore[x + 1] : top;
+      for (let y = top + 1; y < rows; y++) {
+        const h = hash2(x, y, SEED + 6);
+        const ch = h < 0.09 ? biome.ground[Math.floor(h * 1000) % biome.ground.length] : " ";
+        grid[y][x] = { ch, layer: ch === " " ? "" : "fore" };
+      }
+      const tuft = hash2(x, 5, SEED) < 0.07;
+      grid[top][x] = { ch: prev > top ? "/" : next > top ? "\\" : tuft ? "," : "_", layer: "fore" };
+    }
+
+    const chimney = paintFeatures(grid, biome, season, far, near, fore, cols, rows);
+    paintPlants(grid, biome, season, fore, cols, rows);
+
+    return {
+      html: render(grid, rows, cols),
+      scene: {
+        biome, season, tod, cols, rows, charW, lineH, offX, offY, fore,
+        skyRows, stars, moon, chimney, wind, month, date: now.getDate(),
+      },
+    };
   }
 
-  function escapeHtml(s: string) {
-    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  // Plants in two passes: small ones along the ridge line, then larger
+  // ones lower in the band where they are nearer to the viewer. Both
+  // are thinned by a noise field so they gather in stands with open
+  // ground between.
+  function paintPlants(grid: Grid, biome: Biome, season: Season, fore: number[], cols: number, rows: number) {
+    const back = seasonal(biome.back, season);
+    const front = seasonal(biome.front, season);
+    const burn = rng() < 0.1;
+    const burnAt = r(0.1, 0.7) * cols;
+    const burnW = r(0.15, 0.3) * cols;
+    const placed: [Shape, number, number][] = [];
+    const row = (shapes: Shape[], depth: (x: number) => number, dens: number, gapLo: number, seed: number) => {
+      if (!shapes.length) return;
+      let x = Math.floor(r(2, 8));
+      while (x < cols - 3) {
+        let shape = pickR(shapes);
+        const stand = fbm(x * 0.03, seed, 2);
+        if (rng() < dens * smoothstep(0.25, 0.65, stand) * 1.5) {
+          if (burn && x > burnAt && x < burnAt + burnW && shape.h > 2) shape = shape.h > 4 ? SNAG : SNAG_S;
+          const y = depth(x);
+          if (y < rows && y - shape.h >= 0) placed.push([shape, x, y]);
+          x += shape.w + gapLo + Math.floor(rng() * gapLo * 2);
+        } else x += 2 + Math.floor(rng() * 3);
+      }
+    };
+    row(back, (x) => fore[x], biome.density, 1, SEED + 7);
+    row(front, (x) => Math.min(rows - 1, fore[x] + Math.floor(r(3, Math.max(4, (rows - fore[x]) * 0.75)))), biome.density * 0.6, 3, SEED + 8);
+    placed.sort((a, b) => a[2] - b[2]);
+    for (const [s, x, y] of placed) stamp(grid, s, x, y, season);
   }
 
-  function render(grid: Cell[][], rows: number, cols: number) {
+  // Fences, windmills, cabins and animals. Each is a coin flip per
+  // visit so most scenes have one or two and some have none.
+  function paintFeatures(grid: Grid, biome: Biome, season: Season, far: number[], near: number[], fore: number[], cols: number, rows: number) {
+    let chimney: [number, number] | null = null;
+    const spot = (lo = 0.1, hi = 0.9) => Math.floor(r(cols * lo, cols * hi));
+    const onFore = (s: Shape, x: number, depth = 0) => stamp(grid, rng() < 0.5 ? s : mirror(s), x, Math.min(rows - 1, fore[x] + depth), season);
+    const n = biome.name;
+
+    if (n === "steppe" && rng() < 0.45) paintFence(grid, fore, cols, Math.max(6, Math.floor(cols / r(14, 22))));
+    if (n === "steppe" && rng() < 0.12) onFore(WINDMILL, spot(), 0);
+    if (n === "steppe" && rng() < 0.3) {
+      const x = spot(0.15, 0.75);
+      const herd = 1 + Math.floor(rng() * 3);
+      const s = rng() < 0.5 ? COW : mirror(COW);
+      for (let i = 0; i < herd; i++) stamp(grid, s, x + i * Math.floor(r(11, 18)), Math.min(rows - 1, fore[x] + 2 + i), season);
+    }
+    if (n === "steppe" && rng() < 0.15) onFore(PRONGHORN, spot());
+    if (n === "steppe" && season === "spring" && rng() < 0.3) onFore(GROUSE, spot(), 1);
+    if (n === "alpine" && rng() < 0.15) {
+      const x = spot(0.1, 0.85);
+      const y = Math.min(rows - 1, fore[x] + 1);
+      stamp(grid, CABIN, x, y, season);
+      chimney = [x + 2, y - CABIN.h];
+    }
+    if (n === "alpine" && rng() < 0.15) onFore(ELK, spot());
+    if (n === "juniper" && rng() < 0.18) onFore(DEER, spot());
+    if (n === "sonoran" && rng() < 0.15) onFore(ROADRUNNER, spot(), 2);
+    if (n === "sonoran" && rng() < 0.25) {
+      const x = spot(0.1, 0.9);
+      stamp(grid, mirror(COYOTE), x, near[x], season);
+    }
+    // A thin column of smoke from a far ridge in fire season.
+    if ((n === "alpine" || n === "steppe" || n === "juniper") && (season === "summer" || season === "fall") && rng() < 0.08) {
+      const x0 = spot(0.05, 0.95);
+      const lean = rng() < 0.5 ? 1 : -1;
+      for (let i = 1; i < 14; i++) {
+        const y = far[x0] - i;
+        const x = x0 + Math.round(lean * i * i * 0.06);
+        if (y < 0 || x < 0 || x >= cols) break;
+        grid[y][x] = { ch: i % 2 ? "(" : ")", layer: "smoke" };
+        if (i > 6 && x + lean >= 0 && x + lean < cols) grid[y][x + lean] = { ch: "~", layer: "smoke" };
+      }
+    }
+    return chimney;
+  }
+
+  // Fence posts with a strand of wire that sags a little between them.
+  function paintFence(grid: Grid, ridge: number[], cols: number, gap: number) {
+    const height = 2;
+    let last: [number, number] | null = null;
+    for (let x = Math.floor(r(2, gap)); x < cols - 2; x += gap) {
+      const top = ridge[x];
+      if (top - height < 0) continue;
+      for (let i = 1; i <= height; i++) grid[top - i][x] = { ch: "|", layer: "built" };
+      const wy = top - height + 1;
+      if (last) {
+        const [lx, ly] = last;
+        for (let wx = lx + 1; wx < x; wx++) {
+          const u = (wx - lx) / (x - lx);
+          const y = Math.round(ly + (wy - ly) * u + 0.3 * Math.sin(Math.PI * u));
+          if (y >= 0 && y < ridge[wx]) grid[y][wx] = { ch: "-", layer: "built" };
+        }
+      }
+      last = [x, wy];
+    }
+  }
+
+  function render(grid: Grid, rows: number, cols: number) {
     let html = "";
     for (let y = 0; y < rows; y++) {
       const row = grid[y];
       let x = 0;
       while (x < cols) {
         const cell = row[x];
-        if (cell === null) {
-          html += " ";
+        if (cell === null || cell.layer === "") {
+          html += cell ? cell.ch : " ";
           x++;
           continue;
         }
@@ -433,38 +732,33 @@
     return html;
   }
 
-  function measureCharSize(pre: HTMLElement) {
+  function escapeHtml(s: string) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function measure(pre: HTMLElement, text: string, n: number, dim: "w" | "h") {
     const probe = document.createElement("span");
-    probe.textContent = "#".repeat(20);
+    probe.textContent = text;
     probe.style.visibility = "hidden";
     probe.style.position = "absolute";
     probe.style.whiteSpace = "pre";
     pre.appendChild(probe);
-    const width = probe.getBoundingClientRect().width / 20;
+    const rect = probe.getBoundingClientRect();
     pre.removeChild(probe);
-    return width;
+    return (dim === "w" ? rect.width : rect.height) / n;
   }
 
-  function measureLineHeight(pre: HTMLElement) {
-    const probe = document.createElement("span");
-    probe.textContent = "#\n#\n#\n#\n#";
-    probe.style.visibility = "hidden";
-    probe.style.position = "absolute";
-    probe.style.whiteSpace = "pre";
-    pre.appendChild(probe);
-    const height = probe.getBoundingClientRect().height / 5;
-    pre.removeChild(probe);
-    return height;
-  }
-
-  // ===== Weather / wildlife =====
+  // ===== Animated layer: weather, wildlife and a few fixed ambient
+  // details. Everything moves with transform and opacity only, so it
+  // runs on the compositor without relaying out the page.
   let weatherTimer: ReturnType<typeof setTimeout> | null = null;
   const activeIntervals: ReturnType<typeof setInterval>[] = [];
+  let scene: Scene | null = null;
 
   // Hard cap on transient sprites, and the selector that finds them.
-  // Precipitation is excluded: it is a fixed set that loops in place.
+  // Precipitation and ambient details are fixed sets that loop in place.
   const MAX_SPRITES = 6;
-  const SPRITES = ".wx-bird, .wx-cloud, .wx-leaf";
+  const SPRITES = ".wx-sprite";
 
   // Remove a sprite when its animation ends, or after a fallback timeout
   // in case it never does. Browsers pause CSS animations in background
@@ -474,7 +768,7 @@
       if (interval) clearInterval(interval);
       el.remove();
     };
-    el.addEventListener("animationend", done, { once: true });
+    el.addEventListener("animationend", (e) => { if (e.target === el) done(); });
     setTimeout(done, (durS + delayS + 1) * 1000);
   }
 
@@ -494,196 +788,328 @@
     if (layer) layer.innerHTML = "";
   }
 
-  // Small flapping birds get a real 3-frame wingbeat; occasionally a
-  // bigger, slower soaring bird glides through instead — same size,
-  // just a plain "V" held fixed with no flap, for variety in the sky.
-  function spawnBirds(layer: HTMLElement, skyMaxPct: number) {
-    const soaring = Math.random() < 0.3;
-    const count = soaring ? 1 : Math.random() < 0.4 ? 2 : 1;
+  function cellLeft(s: Scene, x: number) { return s.offX + x * s.charW; }
+  function cellTop(s: Scene, y: number) { return s.offY + y * s.lineH; }
 
-    for (let i = 0; i < count; i++) {
-      const bird = document.createElement("span");
-      bird.className = "wx-bird" + (soaring ? " wx-bird-soar" : "");
-      bird.style.top = rand(2, skyMaxPct) + "%";
-      const dur = soaring ? rand(16, 24) : rand(9, 15);
-      const delay = rand(0, 2);
-      bird.style.animationDuration = dur + "s";
-      bird.style.animationDelay = delay + "s";
-      layer.appendChild(bird);
+  // A sprite crosses the layer along x. The outer element carries the
+  // crossing; an optional inner element carries bobbing or flutter.
+  function crosser(layer: HTMLElement, cls: string, text: string, topPx: number, dur: number, delay: number, dir: number, inner = "") {
+    const el = document.createElement("span");
+    el.className = `wx-sprite wx-cross ${cls}`;
+    const w = layer.clientWidth;
+    el.style.top = topPx + "px";
+    el.style.setProperty("--x0", (dir > 0 ? -160 : w + 40) + "px");
+    el.style.setProperty("--x1", (dir > 0 ? w + 40 : -160) + "px");
+    el.style.animationDuration = dur + "s";
+    el.style.animationDelay = delay + "s";
+    const body = document.createElement("span");
+    body.className = "wx-body " + inner;
+    body.textContent = text;
+    el.appendChild(body);
+    layer.appendChild(el);
+    return { el, body };
+  }
 
-      if (soaring) {
-        bird.textContent = "V";
-        retire(bird, dur, delay);
-      } else {
-        const frames = ["v", "-", "^", "-"];
-        let fi = 0;
-        bird.textContent = frames[0];
-        const flap = setInterval(() => {
-          fi = (fi + 1) % frames.length;
-          bird.textContent = frames[fi];
-        }, 180);
-        activeIntervals.push(flap);
-        retire(bird, dur, delay, flap);
+  function animateFrames(body: HTMLElement, el: HTMLElement, frames: string[], ms: number, dur: number, delay: number) {
+    let fi = 0;
+    const t = setInterval(() => {
+      fi = (fi + 1) % frames.length;
+      body.textContent = frames[fi];
+    }, ms);
+    activeIntervals.push(t);
+    retire(el, dur, delay, t);
+  }
+
+  const skyY = (s: Scene, lo: number, hi: number) => cellTop(s, s.skyRows * rand(lo, hi));
+  const groundY = (s: Scene) => {
+    const x = Math.floor(s.cols / 2);
+    return cellTop(s, Math.min(s.rows - 3, s.fore[x] + rand(2, 5)));
+  };
+
+  const EVENT_KINDS = ["bird", "flock", "hawk", "cloud", "leaves", "tumbleweed", "dustdevil", "plane", "balloon", "butterfly", "bats", "meteor", "satellite", "ufo"] as const;
+  type EventKind = (typeof EVENT_KINDS)[number];
+
+  function eventWeights(s: Scene): [EventKind, number][] {
+    const n = s.biome.name;
+    const open = n !== "alpine";
+    const dry = n === "sonoran" || n === "steppe";
+    const night = s.tod === "night";
+    const october = s.month === 9;
+    const shower = (s.month === 7 && s.date >= 9 && s.date <= 15) || (s.month === 11 && s.date >= 10 && s.date <= 16);
+    if (night) {
+      return [
+        ["cloud", 1.5],
+        ["bats", october ? 2.5 : s.season === "summer" ? 0.7 : 0],
+        ["meteor", shower ? 2.5 : 0.5],
+        ["satellite", 0.8],
+        ["bird", 0.25],
+        ["ufo", n === "sonoran" ? 0.04 : 0],
+      ];
+    }
+    return [
+      ["bird", 3],
+      ["flock", s.season === "fall" || s.season === "spring" ? 1.6 : 0.6],
+      ["hawk", open ? 1 : 0.4],
+      ["cloud", 3],
+      ["leaves", s.season === "fall" && n === "alpine" ? 2 : 0],
+      ["tumbleweed", dry && s.season !== "spring" ? 1 : 0],
+      ["dustdevil", n === "sonoran" && s.season !== "winter" ? 0.5 : 0],
+      ["plane", 0.25],
+      ["balloon", 0.1],
+      ["butterfly", s.season === "spring" || s.season === "summer" ? 0.9 : 0],
+      ["bats", october && s.tod === "dusk" ? 1.5 : 0],
+    ];
+  }
+
+  function spawn(layer: HTMLElement, s: Scene, kind: EventKind) {
+    const w = s.wind;
+    switch (kind) {
+      case "bird": {
+        const dur = rand(10, 16), delay = rand(0, 2);
+        const { el, body } = crosser(layer, "wx-sky", "v", skyY(s, 0.1, 0.9), dur, delay, Math.random() < 0.5 ? 1 : -1, "wx-bob");
+        animateFrames(body, el, ["v", "-", "^", "-"], 180, dur, delay);
+        break;
+      }
+      case "flock": {
+        // A loose V of geese or cranes, flapping out of step.
+        const size = 3 + Math.floor(Math.random() * 3);
+        const mid = Math.floor(size / 2);
+        const lines: string[] = [];
+        // The point of the V leads, so it faces the way the flock flies.
+        for (let i = 0; i < size; i++) {
+          const off = Math.abs(mid - i);
+          lines.push(" ".repeat((w > 0 ? mid - off : off) * 2) + "v");
+        }
+        const a = lines.join("\n");
+        const b = lines.map((l, i) => (i % 2 ? l.replace("v", "-") : l)).join("\n");
+        const dur = rand(18, 26), delay = 0;
+        const { el, body } = crosser(layer, "wx-sky", a, skyY(s, 0.05, 0.5), dur, delay, w, "wx-bob");
+        animateFrames(body, el, [a, b], 260, dur, delay);
+        break;
+      }
+      case "hawk": {
+        // Circling on a thermal while the thermal drifts downwind.
+        const dur = rand(30, 44);
+        const { el, body } = crosser(layer, "wx-sky", "~v~", skyY(s, 0.15, 0.7), dur, 0, w, "wx-circle");
+        body.style.setProperty("--r", rand(20, 40) + "px");
+        retire(el, dur, 0);
+        break;
+      }
+      case "cloud": {
+        const shapes = ["   .--.\n.-(    ).\n(___.__)__)", "  .-~~-.\n (      )\n(________)", " .~~~~.\n(______)", "   _ .\n _( ' )_\n(_______)"];
+        const dur = rand(50, 80);
+        const { el } = crosser(layer, "wx-sky wx-cloud", pick(shapes), skyY(s, 0, 0.6), dur, 0, w);
+        retire(el, dur, 0);
+        break;
+      }
+      case "leaves": {
+        const count = Math.random() < 0.5 ? 3 : 2;
+        for (let i = 0; i < count; i++) {
+          const dur = rand(5, 8), delay = rand(0, 2.2);
+          const glyphs = pick([[",", "'"], ['"', ";"], [",", "`"]]);
+          const { el, body } = crosser(layer, "wx-leaf", glyphs[0], cellTop(s, s.fore[Math.floor(s.cols / 2)] - rand(4, 20)), dur, delay, w, "wx-tumble");
+          animateFrames(body, el, glyphs, 160, dur, delay);
+        }
+        break;
+      }
+      case "tumbleweed": {
+        const dur = rand(9, 14);
+        const { el, body } = crosser(layer, "wx-ground wx-weed", "@", groundY(s), dur, 0, w, "wx-hop");
+        animateFrames(body, el, ["@", "%", "&", "%"], 140, dur, 0);
+        break;
+      }
+      case "dustdevil": {
+        const dur = rand(16, 24);
+        const { el, body } = crosser(layer, "wx-ground wx-dust", " ~\n )\n(\n )\n.", groundY(s) - s.lineH * 4, dur, 0, w, "wx-sway");
+        animateFrames(body, el, [" ~\n )\n(\n )\n.", " ~\n(\n )\n(\n ."], 220, dur, 0);
+        break;
+      }
+      case "plane": {
+        const dir = Math.random() < 0.5 ? 1 : -1;
+        const dur = rand(28, 36);
+        const { el } = crosser(layer, "wx-sky wx-plane", dir > 0 ? "- - - -=>" : "<=- - - -", skyY(s, 0, 0.3), dur, 0, dir);
+        retire(el, dur, 0);
+        break;
+      }
+      case "balloon": {
+        const dur = rand(70, 90);
+        const { el } = crosser(layer, "wx-sky wx-balloon", " .-.\n(   )\n `-'\n  #", skyY(s, 0.1, 0.6), dur, 0, w, "wx-bob wx-slow");
+        retire(el, dur, 0);
+        break;
+      }
+      case "butterfly": {
+        const dur = rand(12, 18), delay = rand(0, 1);
+        const { el, body } = crosser(layer, "wx-ground wx-fly", "}{", groundY(s) - s.lineH * rand(3, 8), dur, delay, Math.random() < 0.5 ? 1 : -1, "wx-flutter");
+        animateFrames(body, el, ["}{", "><", "|"], 150, dur, delay);
+        break;
+      }
+      case "bats": {
+        const count = 2 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < count; i++) {
+          const dur = rand(7, 11), delay = rand(0, 1.5);
+          const { el, body } = crosser(layer, "wx-sky wx-bat", "^v^", skyY(s, 0.3, 1), dur, delay, Math.random() < 0.5 ? 1 : -1, "wx-flutter");
+          animateFrames(body, el, ["^v^", "-v-", "v^v"], 110, dur, delay);
+        }
+        break;
+      }
+      case "meteor": {
+        const el = document.createElement("span");
+        const dir = Math.random() < 0.5 ? 1 : -1;
+        el.className = "wx-sprite wx-sky wx-meteor";
+        el.textContent = dir > 0 ? "`.\n  `.\n    *" : "    .'\n  .'\n*";
+        el.style.left = rand(10, 80) + "%";
+        el.style.top = skyY(s, 0, 0.5) + "px";
+        el.style.setProperty("--dx", dir * rand(120, 220) + "px");
+        el.style.setProperty("--dy", rand(70, 120) + "px");
+        const dur = rand(0.8, 1.3);
+        el.style.animationDuration = dur + "s";
+        layer.appendChild(el);
+        retire(el, dur, 0);
+        break;
+      }
+      case "satellite": {
+        const dur = rand(40, 60);
+        const { el } = crosser(layer, "wx-sky wx-sat", ".", skyY(s, 0, 0.5), dur, 0, Math.random() < 0.5 ? 1 : -1);
+        retire(el, dur, 0);
+        break;
+      }
+      case "ufo": {
+        const dur = 14;
+        const { el } = crosser(layer, "wx-sky wx-ufo", "  .-.\n.(___).", skyY(s, 0.2, 0.7), dur, 0, 1);
+        el.style.setProperty("--xm", layer.clientWidth * rand(0.25, 0.7) + "px");
+        retire(el, dur, 0);
+        break;
       }
     }
   }
 
-  function spawnCloud(layer: HTMLElement, skyMaxPct: number) {
-    const shapes = ["~~~~", ".~~~~.", "~~~~~~", ".~~~~~~.", "~~~~~~~~~"];
-    const cloud = document.createElement("span");
-    cloud.className = "wx-cloud";
-    cloud.textContent = pick(shapes);
-    cloud.style.top = rand(2, Math.max(4, skyMaxPct * 0.75)) + "%";
-    const dur = rand(28, 50);
-    cloud.style.animationDuration = dur + "s";
-    cloud.style.setProperty("--bob", rand(-3, 3).toFixed(1) + "%");
-    layer.appendChild(cloud);
-    retire(cloud, dur, 0);
+  function trySpawn(layer: HTMLElement, kind?: EventKind) {
+    const s = scene;
+    if (!s || document.hidden) return;
+    if (layer.querySelectorAll(SPRITES).length >= MAX_SPRITES) return;
+    if (!kind) {
+      const ws = eventWeights(s).filter(([, wt]) => wt > 0);
+      const total = ws.reduce((a, [, wt]) => a + wt, 0);
+      let roll = Math.random() * total;
+      kind = ws[ws.length - 1][0];
+      for (const [k, wt] of ws) {
+        roll -= wt;
+        if (roll <= 0) { kind = k; break; }
+      }
+    }
+    spawn(layer, s, kind);
   }
 
-  // Persistent for the whole visit — no cleanup timer. Cleared only
-  // when clearWeather() wipes the layer on the next regenerate.
-  function spawnPersistentPrecip(layer: HTMLElement, kind: "snow" | "rain") {
+  // Recurring rather than one-shot: rechecks every so often for as
+  // long as the page stays open. Cancelled and restarted by
+  // clearWeather() on every redraw via the shared weatherTimer handle.
+  function scheduleNextWeather(layer: HTMLElement) {
+    weatherTimer = setTimeout(() => {
+      if (Math.random() < 0.6) trySpawn(layer);
+      scheduleNextWeather(layer);
+    }, rand(5000, 12000));
+  }
+
+  function spawnPersistentPrecip(layer: HTMLElement, kind: "snow" | "rain", s: Scene) {
     const count = kind === "snow" ? 16 : 22;
     const chars = kind === "snow" ? ["*", ".", "'"] : ["|", "'", ","];
-    const fallDur = kind === "snow" ? rand(3, 4.5) : rand(1, 1.6);
+    const fallDur = kind === "snow" ? rand(5, 7) : rand(1, 1.6);
+    const h = layer.clientHeight + 40;
     for (let i = 0; i < count; i++) {
       const p = document.createElement("span");
       p.className = `wx-particle wx-${kind}`;
       p.textContent = pick(chars);
       p.style.left = rand(0, 100) + "%";
-      p.style.animationDuration = fallDur + "s";
-      p.style.animationDelay = -rand(0, fallDur) + "s";
-      p.style.animationIterationCount = "infinite";
+      p.style.setProperty("--fall", h + "px");
+      p.style.setProperty("--drift", (kind === "snow" ? s.wind * rand(20, 80) : s.wind * 12) + "px");
+      p.style.animationDuration = fallDur * (h / 900) + "s";
+      p.style.animationDelay = -rand(0, fallDur * (h / 900)) + "s";
       layer.appendChild(p);
     }
   }
 
-  // Leaves combine a smooth CSS-driven drift/wobble (wx-blow) with a
-  // small flutter — alternating between two related glyphs — so each
-  // leaf visibly turns as it blows through, not just slides.
-  function spawnLeaves(layer: HTMLElement) {
-    const count = Math.random() < 0.5 ? 3 : 2;
-    const glyphSets = [
-      [",", "'"],
-      ['"', ";"],
-      [",", '"'],
-    ];
-    for (let i = 0; i < count; i++) {
-      const leaf = document.createElement("span");
-      leaf.className = "wx-leaf";
-      const glyphs = pick(glyphSets);
-      leaf.textContent = glyphs[0];
-      leaf.style.top = rand(50, 78) + "%";
-      const dur = rand(3.5, 5.5);
-      const delay = rand(0, 2.2);
-      leaf.style.animationDuration = dur + "s";
-      leaf.style.animationDelay = delay + "s";
-      layer.appendChild(leaf);
-
-      let gi = 0;
-      const flutter = setInterval(() => {
-        gi = (gi + 1) % glyphs.length;
-        leaf.textContent = glyphs[gi];
-      }, 160);
-      activeIntervals.push(flutter);
-      retire(leaf, dur, delay, flutter);
+  // Fixed details that loop in place: a few twinkling stars, the moon,
+  // and chimney smoke. At most a dozen elements, none of them removed.
+  function spawnAmbient(layer: HTMLElement, s: Scene, pre: HTMLElement, motion: boolean) {
+    const small = getComputedStyle(pre).fontSize;
+    if (s.moon) {
+      const m = document.createElement("span");
+      m.className = "wx-amb wx-moon";
+      m.textContent = s.moon.glyph;
+      m.style.left = cellLeft(s, s.moon.x) + "px";
+      m.style.top = cellTop(s, s.moon.y) + "px";
+      layer.appendChild(m);
+    }
+    if (!motion) return;
+    const twinkles = s.stars.slice().sort(() => Math.random() - 0.5).slice(0, 6);
+    for (const [x, y, ch] of twinkles) {
+      const t = document.createElement("span");
+      t.className = "wx-amb wx-twinkle";
+      t.textContent = ch;
+      t.style.fontSize = small;
+      t.style.left = cellLeft(s, x) + "px";
+      t.style.top = cellTop(s, y) + "px";
+      t.style.animationDuration = rand(3, 6) + "s";
+      t.style.animationDelay = -rand(0, 6) + "s";
+      layer.appendChild(t);
+    }
+    if (s.chimney) {
+      for (let i = 0; i < 3; i++) {
+        const p = document.createElement("span");
+        p.className = "wx-amb wx-smoke";
+        p.textContent = pick(["(", ")", "~"]);
+        p.style.fontSize = small;
+        p.style.left = cellLeft(s, s.chimney[0]) + "px";
+        p.style.top = cellTop(s, s.chimney[1]) + "px";
+        p.style.setProperty("--dx", s.wind * rand(10, 24) + "px");
+        p.style.animationDelay = -i * 2 + "s";
+        layer.appendChild(p);
+      }
     }
   }
 
-  // Recurring rather than one-shot: rechecks every so often for as
-  // long as the page stays open. Cancelled and restarted by
-  // clearWeather() on every regenerate (resize) via the shared
-  // weatherTimer handle. Only covers birds/leaves/cloud — precipitation
-  // is decided once in generate(), not here.
-  function scheduleNextWeather(
-    layer: HTMLElement,
-    biome: Biome,
-    cols: number,
-    rows: number,
-    skyMaxPct: number
-  ) {
-    const delay = rand(4500, 11000);
-    weatherTimer = setTimeout(() => {
-      const busy = layer.querySelectorAll(SPRITES).length >= MAX_SPRITES;
-      if (!document.hidden && !busy && Math.random() < 0.65 && biome.weather.length > 0) {
-        const kind = pick(biome.weather);
-        if (kind === "birds") spawnBirds(layer, skyMaxPct);
-        else if (kind === "cloud") spawnCloud(layer, skyMaxPct);
-        else if (kind === "leaves") spawnLeaves(layer);
-      }
-      scheduleNextWeather(layer, biome, cols, rows, skyMaxPct);
-    }, delay);
-  }
+  let lastSize = "";
 
-  function generate() {
+  function generate(force = false) {
     const wrap = document.getElementById("ascii-landscape");
     const pre = document.getElementById("ascii-landscape-art");
     const weatherLayer = document.getElementById("ascii-landscape-weather");
     const groundSpace = document.getElementById("ground-space");
-    if (!wrap || !pre) return;
+    if (!wrap || !pre || !weatherLayer) return;
+
+    // Phones fire resize when the URL bar shows or hides. Only redraw
+    // when the box really changed shape.
+    const size = `${wrap.clientWidth}x${Math.round(wrap.clientHeight / 40)}`;
+    if (!force && size === lastSize) return;
+    lastSize = size;
 
     clearWeather(weatherLayer);
+    const groundPx = groundSpace ? groundSpace.offsetHeight : wrap.clientHeight * 0.35;
+    const built = buildScene(wrap, pre, groundPx);
+    if (!built) return;
+    scene = built.scene;
+    wrap.dataset.biome = scene.biome.name;
+    wrap.dataset.tod = scene.tod;
+    wrap.dataset.season = scene.season;
+    pre.style.top = scene.offY + "px";
+    pre.innerHTML = built.html;
 
-    const biome = pick(BIOMES);
-    wrap.dataset.biome = biome.name;
+    const reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    spawnAmbient(weatherLayer, scene, pre, !reducedMotion);
+    if (reducedMotion) return;
 
-    const charWidth = measureCharSize(pre);
-    const lineHeight = measureLineHeight(pre);
-    if (!charWidth || !lineHeight) return;
+    const n = scene.biome.name;
+    const precip: "snow" | "rain" | null =
+      scene.season === "winter" ? (n === "sonoran" ? null : "snow")
+      : n === "sonoran" ? (scene.season === "summer" ? "rain" : null)
+      : n === "alpine" && scene.season !== "summer" ? "snow"
+      : "rain";
+    const chance = scene.season === "winter" ? 0.35 : 0.15;
+    if (precip && Math.random() < chance) spawnPersistentPrecip(weatherLayer, precip, scene);
 
-    const cols = Math.max(90, Math.min(420, Math.floor(wrap.clientWidth / charWidth)));
-
-    const totalHeightPx = wrap.clientHeight;
-    const groundHeightPx = groundSpace ? groundSpace.offsetHeight : totalHeightPx * 0.35;
-    const rows = Math.max(70, Math.min(260, Math.round(totalHeightPx / lineHeight)));
-
-    // fraction of the scene's total height taken up by real page
-    // content (everything above the reserved ground space) — terrain
-    // bands are placed relative to this so the dense "fore" band
-    // reliably lands inside the reserved ground space at the bottom.
-    const contentFrac = Math.max(0.15, Math.min(0.92, 1 - groundHeightPx / totalHeightPx));
-
-    const grid: Cell[][] = Array.from({ length: rows }, () => new Array(cols).fill(null));
-
-    // Stars (and the glow marker standing in for them) are a night-sky
-    // detail — skip them in light mode instead of scattering dots and
-    // a stray glowing "O" across a plain daytime sky.
-    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
-    const skyMaxFrac = contentFrac * 0.55;
-    if (isDark) paintSky(grid, cols, Math.round(rows * skyMaxFrac));
-
-    // Compute every ridge line up front so each layer's fill can stop
-    // exactly where the next, nearer layer begins (see paintRidge).
-    const far = ridgeHeights(cols, rows, contentFrac * 0.3, contentFrac * 0.82, biome, biome.farMidFlatten);
-    const midMax = contentFrac + (1 - contentFrac) * 0.42;
-    const mid = ridgeHeights(cols, rows, contentFrac * 0.66, midMax, biome, biome.farMidFlatten);
-    const nearMin = contentFrac + (1 - contentFrac) * 0.16;
-    const nearMax = contentFrac + (1 - contentFrac) * 0.62;
-    const near = ridgeHeights(cols, rows, nearMin, nearMax, biome, 1);
-    const foreMin = contentFrac + (1 - contentFrac) * 0.48;
-    const fore = ridgeHeights(cols, rows, foreMin, 0.995, biome, 1);
-
-    paintRidge(grid, far, cols, rows, "far", biome.farFill, mid);
-    paintRidge(grid, mid, cols, rows, "mid", biome.midFill, near);
-    paintMidDetail(grid, mid, cols, biome);
-    paintRidge(grid, near, cols, rows, "near", ["#"], fore);
-    if (biome.snowCaps) paintSnowCaps(grid, near, cols, rows);
-    paintRidge(grid, fore, cols, rows, "fore", biome.foreFill);
-    if (biome.fence) paintFence(grid, fore, cols);
-    paintVegetation(grid, fore, cols, rows, biome);
-
-    pre.innerHTML = render(grid, rows, cols);
-
-    const reducedMotion =
-      window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    if (weatherLayer && !reducedMotion) {
-      if (biome.precip && Math.random() < 0.2) {
-        spawnPersistentPrecip(weatherLayer, biome.precip);
-      }
-      scheduleNextWeather(weatherLayer, biome, cols, rows, skyMaxFrac * 100);
-    }
+    const forcedKind = params.get("wx") as EventKind | null;
+    if (forcedKind && (EVENT_KINDS as readonly string[]).includes(forcedKind)) setTimeout(() => trySpawn(weatherLayer, forcedKind), 600);
+    scheduleNextWeather(weatherLayer);
   }
 
   document.addEventListener("visibilitychange", () => {
@@ -694,13 +1120,13 @@
   let resizeTimer: ReturnType<typeof setTimeout>;
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(generate, 250);
+    resizeTimer = setTimeout(() => generate(), 250);
   });
 
   // Defer the first generation by a frame so real page content paints
   // immediately instead of the whole page blocking on building and
   // inserting a large grid before anything is visible at all.
-  requestAnimationFrame(() => requestAnimationFrame(generate));
+  requestAnimationFrame(() => requestAnimationFrame(() => generate(true)));
 </script>
 
 <style>
@@ -710,6 +1136,11 @@
     z-index: 0;
     overflow: hidden;
     pointer-events: none;
+    --small: clamp(6px, 0.82vw, 11px);
+
+    --bark: #8f7350; --pale: #cfc6ad; --gold: #d9a63c; --bloom: #d9b44a;
+    --bloom2: #9c8fd6; --bloom3: #d9705a; --cheat: #a88088; --fauna: #c9bc98;
+    --built: #9a8460; --smoke: #6f6a5c; --glow-win: #e8b45a;
   }
 
   .ascii-landscape-art {
@@ -718,7 +1149,7 @@
     margin: 0;
     padding: 0;
     font-family: var(--font-mono);
-    font-size: clamp(6px, 0.82vw, 11px);
+    font-size: var(--small);
     line-height: 1;
     letter-spacing: 0;
     white-space: pre;
@@ -727,58 +1158,55 @@
     font-weight: 600;
   }
 
-  .ascii-landscape-art :global(.L-star) { color: var(--ink-2); opacity: 0.7; animation: wx-twinkle 4.5s ease-in-out infinite; }
-  .ascii-landscape-art :global(.L-glow) { color: var(--contour); font-weight: 800; }
-  .ascii-landscape-art :global(.L-far) { color: var(--land-far); animation: wx-shimmer-far 7s ease-in-out infinite; }
-  .ascii-landscape-art :global(.L-mid) { color: var(--land-mid); animation: wx-shimmer-mid 9s ease-in-out infinite; }
+  .ascii-landscape-art :global(.L-star) { color: var(--ink); opacity: 0.8; }
+  .ascii-landscape-art :global(.L-star2) { color: var(--ink-2); opacity: 0.45; }
+  .ascii-landscape-art :global(.L-far) { color: var(--land-far); }
+  .ascii-landscape-art :global(.L-mid) { color: var(--land-mid); }
   .ascii-landscape-art :global(.L-near) { color: var(--land-near); }
   .ascii-landscape-art :global(.L-fore) { color: var(--land-fore); }
-  .ascii-landscape-art :global(.L-veg) { color: var(--land-veg); }
   .ascii-landscape-art :global(.L-snow) { color: var(--land-snow); }
-  .ascii-landscape-art :global(.L-fence) { color: var(--land-fence); }
+  .ascii-landscape-art :global(.L-veg) { color: var(--land-veg); }
+  .ascii-landscape-art :global(.L-vegd) { color: var(--land-vegd, var(--land-veg)); }
+  .ascii-landscape-art :global(.L-farveg) { color: color-mix(in oklab, var(--land-veg) 55%, var(--land-mid)); }
+  .ascii-landscape-art :global(.L-bark) { color: var(--bark); }
+  .ascii-landscape-art :global(.L-pale) { color: var(--pale); }
+  .ascii-landscape-art :global(.L-gold) { color: var(--gold); }
+  .ascii-landscape-art :global(.L-bloom) { color: var(--bloom); }
+  .ascii-landscape-art :global(.L-bloom2) { color: var(--bloom2); }
+  .ascii-landscape-art :global(.L-bloom3) { color: var(--bloom3); }
+  .ascii-landscape-art :global(.L-cheat) { color: var(--cheat); }
+  .ascii-landscape-art :global(.L-fauna) { color: var(--fauna); }
+  .ascii-landscape-art :global(.L-built) { color: var(--built); }
+  .ascii-landscape-art :global(.L-glow) { color: var(--glow-win); }
+  .ascii-landscape-art :global(.L-smoke) { color: var(--smoke); opacity: 0.6; }
 
-  @keyframes wx-twinkle { 0%, 100% { opacity: 0.85; } 50% { opacity: 0.25; } }
+  /* At dawn and dusk the distant ranges warm up. */
+  .ascii-landscape[data-tod="dawn"] .ascii-landscape-art :global(.L-far),
+  .ascii-landscape[data-tod="dusk"] .ascii-landscape-art :global(.L-far) { color: color-mix(in oklab, var(--land-far) 62%, #d06a3e); }
+  .ascii-landscape[data-tod="dawn"] .ascii-landscape-art :global(.L-mid),
+  .ascii-landscape[data-tod="dusk"] .ascii-landscape-art :global(.L-mid) { color: color-mix(in oklab, var(--land-mid) 80%, #c0603a); }
 
-  /* ===== Biome palettes — glyph color only, no background fill. Real
-     hue separation per layer (not just a lightness step on one hue),
-     and veg is always a distinctly more saturated green than the
-     terrain around it. Light mode: far lightest / fore darkest
-     (daytime haze). Dark mode: far darkest / fore lightest (things
-     nearer catch more of what light there is). ===== */
-  .ascii-landscape[data-biome="pine"] {
-    --land-far: #a8b49c; --land-mid: #5f8a6e; --land-near: #2c5a44; --land-fore: #24401f;
-    --land-veg: #1a7a42; --land-snow: #ffffff; --land-fence: #6b5738;
-  }
-  .ascii-landscape[data-biome="desert"] {
-    --land-far: #c9a688; --land-mid: #b8823f; --land-near: #8a5a2e; --land-fore: #5c3a18;
-    --land-veg: #4a7a2e; --land-snow: transparent; --land-fence: #7a5230;
+  /* ===== Biome palettes, glyph color only. Far ranges darkest, fore
+     lightest: nearer things catch more of what light there is. veg is
+     the main plant color, vegd the second (grasses, pinyon, fir). ===== */
+  .ascii-landscape[data-biome="alpine"] {
+    --land-far: #37464f; --land-mid: #2f5546; --land-near: #3b6a4c; --land-fore: #6a9668;
+    --land-veg: #3fa368; --land-vegd: #2f8a55; --land-snow: #dfe9e6;
   }
   .ascii-landscape[data-biome="steppe"] {
-    --land-far: #aba48c; --land-mid: #a68a4a; --land-near: #6b4f2a; --land-fore: #453518;
-    --land-veg: #4a7a2e; --land-snow: transparent; --land-fence: #6b5738;
+    --land-far: #424a56; --land-mid: #615641; --land-near: #85704a; --land-fore: #b89c62;
+    --land-veg: #8fa080; --land-vegd: #a89a5e; --land-snow: #dfe9e6;
   }
-  /* No bare @media (prefers-color-scheme: dark) fallback here —
-     theme-toggle.js always sets data-theme explicitly (from
-     localStorage or the OS preference) before this component's own
-     script populates anything, so relying only on the data-theme
-     attribute (rather than also matching on the OS media query)
-     avoids a real bug: a media-query rule would keep re-asserting
-     dark colors on top of an explicit data-theme="light" choice
-     whenever the OS itself still prefers dark. */
-  :global(html[data-theme="dark"]) .ascii-landscape[data-biome="pine"] {
-    --land-far: #3d4d56; --land-mid: #2f5c48; --land-near: #3a6b4a; --land-fore: #6a9c6a;
-    --land-veg: #22a35c; --land-snow: #e8f0ee; --land-fence: #8a7550;
+  .ascii-landscape[data-biome="juniper"] {
+    --land-far: #4a4640; --land-mid: #6b5a42; --land-near: #8c7052; --land-fore: #b8986c;
+    --land-veg: #6f9a5a; --land-vegd: #5d8a4f; --land-snow: #dfe9e6;
   }
-  :global(html[data-theme="dark"]) .ascii-landscape[data-biome="desert"] {
-    --land-far: #6b5040; --land-mid: #8a5c2c; --land-near: #a67a3a; --land-fore: #d9ab5e;
-    --land-veg: #6ba33e; --land-snow: transparent; --land-fence: #a08152;
-  }
-  :global(html[data-theme="dark"]) .ascii-landscape[data-biome="steppe"] {
-    --land-far: #454f5e; --land-mid: #665840; --land-near: #8a7248; --land-fore: #c2a262;
-    --land-veg: #7ba34e; --land-snow: transparent; --land-fence: #a68a5c;
+  .ascii-landscape[data-biome="sonoran"] {
+    --land-far: #574a48; --land-mid: #85603a; --land-near: #a67a3a; --land-fore: #d4a65e;
+    --land-veg: #6ba33e; --land-vegd: #a0a052; --land-snow: transparent;
   }
 
-  /* ===== Weather / wildlife overlay ===== */
+  /* ===== Weather, wildlife and ambient overlay ===== */
   .ascii-landscape-weather {
     position: absolute;
     inset: 0;
@@ -787,66 +1215,98 @@
     z-index: 1;
     font-family: var(--font-mono);
     font-size: clamp(11px, 1.7vw, 19px);
+    line-height: 1;
   }
 
-  .ascii-landscape-weather :global(.wx-bird) {
-    position: absolute; left: -6%; color: var(--ink);
-    animation-name: wx-fly; animation-timing-function: linear; animation-fill-mode: forwards;
-  }
-  .ascii-landscape-weather :global(.wx-bird-soar) { opacity: 0.85; }
-
-  .ascii-landscape-weather :global(.wx-cloud) {
-    position: absolute; left: -10%; color: var(--ink-2); opacity: 0.55;
-    animation-name: wx-drift; animation-timing-function: linear; animation-fill-mode: forwards;
-  }
-
-  .ascii-landscape-weather :global(.wx-particle) { position: absolute; top: -6%; animation-name: wx-fall; animation-timing-function: linear; }
-  .ascii-landscape-weather :global(.wx-snow) { color: var(--ink-2); }
-  .ascii-landscape-weather :global(.wx-rain) { color: var(--ink-2); }
-
-  .ascii-landscape-weather :global(.wx-leaf) {
+  .ascii-landscape-weather :global(.wx-sprite),
+  .ascii-landscape-weather :global(.wx-amb),
+  .ascii-landscape-weather :global(.wx-particle) {
     position: absolute;
-    left: -6%;
-    color: var(--wood);
-    animation-name: wx-blow;
-    animation-timing-function: ease-in-out;
-    animation-fill-mode: forwards;
+    white-space: pre;
+    will-change: transform;
   }
+  .ascii-landscape-weather :global(.wx-body) { display: inline-block; }
+  .ascii-landscape-weather :global(.wx-cross) {
+    left: 0;
+    animation-name: wx-cross; animation-timing-function: linear; animation-fill-mode: both;
+  }
+  .ascii-landscape-weather :global(.wx-sky) { color: var(--ink); }
+  .ascii-landscape-weather :global(.wx-ground) { font-size: var(--small); font-weight: 600; color: var(--fauna); }
+  .ascii-landscape-weather :global(.wx-cloud) { color: var(--ink-2); opacity: 0.4; font-size: var(--small); }
+  .ascii-landscape-weather :global(.wx-plane) { color: var(--ink-2); opacity: 0.6; font-size: var(--small); }
+  .ascii-landscape-weather :global(.wx-balloon) { color: var(--bloom3); opacity: 0.85; font-size: var(--small); font-weight: 600; }
+  .ascii-landscape-weather :global(.wx-leaf) { color: var(--gold); }
+  .ascii-landscape-weather :global(.wx-weed) { color: var(--bark); }
+  .ascii-landscape-weather :global(.wx-dust) { color: var(--land-mid); opacity: 0.7; }
+  .ascii-landscape-weather :global(.wx-fly) { color: var(--bloom); }
+  .ascii-landscape-weather :global(.wx-bat) { color: var(--ink-2); font-size: var(--small); font-weight: 700; }
+  .ascii-landscape-weather :global(.wx-sat) { color: var(--ink); font-size: var(--small); }
+  .ascii-landscape-weather :global(.wx-ufo) { color: var(--water); font-size: var(--small); font-weight: 600; animation-name: wx-ufo; animation-timing-function: ease-in-out; }
+  .ascii-landscape-weather :global(.wx-meteor) {
+    color: var(--ink); font-size: var(--small); font-weight: 700;
+    animation-name: wx-meteor; animation-timing-function: ease-in; animation-fill-mode: both;
+  }
+  .ascii-landscape-weather :global(.wx-moon) { color: var(--ink); font-weight: 700; opacity: 0.9; }
+  .ascii-landscape-weather :global(.wx-twinkle) { color: var(--ink); font-weight: 600; animation: wx-twinkle 4s ease-in-out infinite; }
+  .ascii-landscape-weather :global(.wx-smoke) { color: var(--smoke); font-weight: 600; animation: wx-smoke 6s ease-out infinite; }
 
-  @keyframes wx-fly {
-    0%   { left: -6%;  transform: translateY(0); }
-    25%  { transform: translateY(-6%); }
-    50%  { transform: translateY(2%); }
-    75%  { transform: translateY(-4%); }
-    100% { left: 106%; transform: translateY(0); }
+  .ascii-landscape-weather :global(.wx-bob) { animation: wx-bob 2.6s ease-in-out infinite alternate; }
+  .ascii-landscape-weather :global(.wx-slow) { animation-duration: 7s; }
+  .ascii-landscape-weather :global(.wx-circle) { animation: wx-circle 9s linear infinite; }
+  .ascii-landscape-weather :global(.wx-tumble) { animation: wx-tumble 1.8s ease-in-out infinite; }
+  .ascii-landscape-weather :global(.wx-hop) { animation: wx-hop 0.9s cubic-bezier(0.3, 0, 0.7, 1) infinite; }
+  .ascii-landscape-weather :global(.wx-sway) { animation: wx-sway 1.6s ease-in-out infinite alternate; }
+  .ascii-landscape-weather :global(.wx-flutter) { animation: wx-flutter 1.3s ease-in-out infinite; }
+  .ascii-landscape-weather :global(.wx-plod) { animation: wx-plod 0.8s steps(2) infinite; }
+
+  .ascii-landscape-weather :global(.wx-particle) {
+    top: -20px;
+    animation-name: wx-fall; animation-timing-function: linear; animation-iteration-count: infinite;
+    color: var(--ink-2);
   }
-  @keyframes wx-drift {
-    0%   { left: -10%; transform: translateY(0); }
-    50%  { transform: translateY(var(--bob, 2%)); }
-    100% { left: 110%; transform: translateY(0); }
+  .ascii-landscape-weather :global(.wx-snow) { opacity: 0.8; }
+  .ascii-landscape-weather :global(.wx-rain) { opacity: 0.55; }
+
+  @keyframes wx-cross { from { transform: translate3d(var(--x0), 0, 0); } to { transform: translate3d(var(--x1), 0, 0); } }
+  @keyframes wx-ufo {
+    0% { transform: translate3d(var(--x0), 0, 0); }
+    35%, 60% { transform: translate3d(var(--xm), 0, 0); }
+    64% { transform: translate3d(var(--xm), -6px, 0); }
+    100% { transform: translate3d(var(--x1), -260px, 0); }
   }
-  @keyframes wx-fall { 0% { top: -6%; opacity: 1; } 100% { top: 106%; opacity: 0.85; } }
-  @keyframes wx-shimmer-far { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-  @keyframes wx-shimmer-mid { 0%, 100% { opacity: 1; } 50% { opacity: 0.75; } }
-  @keyframes wx-blow {
-    0%   { left: -6%;  transform: translateY(0) rotate(0deg); opacity: 0; }
-    8%   { opacity: 1; }
-    30%  { transform: translateY(-10%) rotate(60deg); }
-    55%  { transform: translateY(6%) rotate(160deg); }
-    78%  { transform: translateY(-6%) rotate(260deg); }
-    92%  { opacity: 1; }
-    100% { left: 106%; transform: translateY(4%) rotate(360deg); opacity: 0.85; }
+  @keyframes wx-bob { from { transform: translateY(-5px); } to { transform: translateY(5px); } }
+  @keyframes wx-circle {
+    from { transform: rotate(0deg) translateX(var(--r, 30px)) rotate(0deg); }
+    to { transform: rotate(360deg) translateX(var(--r, 30px)) rotate(-360deg); }
+  }
+  @keyframes wx-tumble {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    30% { transform: translateY(-14px) rotate(120deg); }
+    65% { transform: translateY(8px) rotate(250deg); }
+  }
+  @keyframes wx-hop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-0.9em); } }
+  @keyframes wx-sway { from { transform: skewX(-6deg); } to { transform: skewX(6deg); } }
+  @keyframes wx-flutter {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(4px, -9px); }
+    50% { transform: translate(-3px, 3px); }
+    75% { transform: translate(5px, -5px); }
+  }
+  @keyframes wx-plod { from { transform: translateY(0); } to { transform: translateY(-1px); } }
+  @keyframes wx-fall { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(var(--drift, 0px), var(--fall, 100vh), 0); } }
+  @keyframes wx-meteor {
+    0% { opacity: 0; transform: translate(0, 0); }
+    15% { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--dx), var(--dy)); }
+  }
+  @keyframes wx-twinkle { 0%, 100% { opacity: 0.15; } 50% { opacity: 1; } }
+  @keyframes wx-smoke {
+    0% { opacity: 0; transform: translate(0, 0); }
+    20% { opacity: 0.7; }
+    100% { opacity: 0; transform: translate(var(--dx, 12px), -40px); }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ascii-landscape-art :global(.L-star),
-    .ascii-landscape-art :global(.L-far),
-    .ascii-landscape-art :global(.L-mid),
-    .ascii-landscape-weather :global(.wx-bird),
-    .ascii-landscape-weather :global(.wx-cloud),
-    .ascii-landscape-weather :global(.wx-particle),
-    .ascii-landscape-weather :global(.wx-leaf) {
-      animation: none;
-    }
+    .ascii-landscape-weather :global(*) { animation: none !important; }
   }
 </style>

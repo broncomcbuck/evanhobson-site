@@ -17,14 +17,6 @@ const isActive = (href) => {
       <a class={isActive("/cv") ? "active" : ""} href="/cv">CV</a>
     </div>
 
-    <button
-      class="theme-toggle"
-      aria-label="Toggle light/dark mode"
-      onclick="toggleTheme()"
-      title="Toggle light/dark mode"
-    >
-      ◐
-    </button>
   </div>
 </nav>
 
@@ -66,20 +58,6 @@ const isActive = (href) => {
 .links a.active {
   color: var(--ink);
   border-bottom-color: var(--contour);
-}
-
-.theme-toggle {
-  background: none;
-  border: 1px solid var(--ink);
-  color: var(--ink);
-  font-size: 1rem;
-  line-height: 1;
-  padding: 0.4rem 0.55rem;
-  cursor: pointer;
-}
-
-.theme-toggle:hover {
-  background: var(--paper-2);
 }
 
 @media (max-width: 520px) {

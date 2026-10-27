@@ -1,6 +1,6 @@
 /* =======================================================
    DESIGN TOKENS
-   Warm paper and ink, serif text, square edges. The old
+   Dark paper and warm ink, serif text, square edges. The old
    token names (--bg, --text, --accent and so on) are kept as
    aliases because some page styles still use them.
    ======================================================= */
@@ -8,14 +8,15 @@
 :root {
   --nav-h: 54px;
 
-  --paper: #e6dcc0;
-  --paper-2: #ddd0ab;
-  --ink: #241f18;
-  --ink-2: #564c3c;
-  --contour: #8a5a34;
-  --wood: #57684a;
-  --water: #3f7186;
-  --line: #b9a97d;
+  color-scheme: dark;
+  --paper: #14130d;
+  --paper-2: #1c1a11;
+  --ink: #e8ddc0;
+  --ink-2: #b3a888;
+  --contour: #c98a54;
+  --wood: #8aa374;
+  --water: #6fabc2;
+  --line: #322e1e;
 
   --font-serif: Charter, "Iowan Old Style", Georgia, "Palatino Linotype", serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
@@ -32,29 +33,6 @@
   --r-lg: 0px;
   --r-xl: 0px;
   --font-sans: var(--font-serif);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper: #14130d;
-    --paper-2: #1c1a11;
-    --ink: #e8ddc0;
-    --ink-2: #b3a888;
-    --contour: #c98a54;
-    --wood: #8aa374;
-    --water: #6fabc2;
-    --line: #322e1e;
-  }
-}
-:root[data-theme="dark"] {
-  --paper: #14130d;
-  --paper-2: #1c1a11;
-  --ink: #e8ddc0;
-  --ink-2: #b3a888;
-  --contour: #c98a54;
-  --wood: #8aa374;
-  --water: #6fabc2;
-  --line: #322e1e;
 }
 
 /* ======================================================= */
