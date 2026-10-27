@@ -8,13 +8,14 @@
 //
 // Each page load picks a seed. The seed decides the biome, terrain
 // and plants, so a resize or theme toggle redraws the same place
-// instead of rolling a new one. The visitor's clock and calendar set
-// the time of day (sun or moon position, light direction, dawn and
-// dusk tint), the season (snowline, aspen color, flowers, rabbitbrush
-// bloom) and the moon phase.
+// instead of rolling a new one. The site is dark only, so the sky is
+// always a night sky. The visitor's clock and calendar set the moon's
+// position and phase, the light direction, the dawn and dusk tint,
+// which sprites come by (birds by day, bats and meteors at night) and
+// the season (snowline, aspen color, flowers, rabbitbrush bloom).
 //
 // Query parameters for looking at a particular scene:
-//   ?scene=alpine|steppe|juniper|canyon|sonoran|playa
+//   ?scene=alpine|steppe|juniper|sonoran
 //   &season=spring|summer|fall|winter  &tod=dawn|day|dusk|night
 //   &seed=123  &wx=<sprite kind, see EVENT_KINDS>
 ---
@@ -29,7 +30,7 @@
   type Grid = Cell[][];
   type Season = "spring" | "summer" | "fall" | "winter";
   type Tod = "dawn" | "day" | "dusk" | "night";
-  type TerrainKind = "ridged" | "rolling" | "mesa" | "dunes" | "flat";
+  type TerrainKind = "ridged" | "rolling" | "mesa";
   type Texture = "hatch" | "stipple" | "strata";
   type LayerSpec = { kind: TerrainKind; freq: number; amp: number };
   type ShapeCell = { dx: number; dy: number; ch: string; p: string };
@@ -169,9 +170,6 @@
   const JUNIPER = S([" .&&. ", "&&%&&&", "`&&&&'", "  )(  "], ["gggggg", "gggggg", "gggggg", "  bb  "]);
   const JUNIPER_S = S([".&&.", "&&&&", " )( "], ["gggg", "gggg", " bb "]);
   const PINYON = S([" .%%. ", "%%%%%%", " %%%% ", "  ||  "], ["dddddd", "dddddd", "dddddd", "  bb  "]);
-  const COTTONWOOD = S(["  .oOOo.  ", " oOOoOOOo ", "  oOOOOo  ", "   \\||/   ", "    ||    "], ["yyyyyyyyyy", "yyyyyyyyyy", "yyyyyyyyyy", "   bbbb   ", "    bb    "], {
-    winter: S([" \\ \\|/ / ", "  \\\\|//  ", "   \\||/  ", "    ||   "], "b"),
-  });
 
   // Sonoran
   const SAGUARO_L = S(["   _   ", "  | |  ", "  | | |", "| | | |", "\\_| |_/", "  | |  ", "  | |  "], "g");
@@ -183,10 +181,6 @@
   const CHOLLA = S([" *%*", "  %*", " *% "], "g");
   const CREOSOTE = S(["'\\'/'", " \\|/ "], "d");
 
-  // Playa and salt desert
-  const GREASEWOOD = S([".:.", "\\|/"], ["ggg", "ddd"]);
-  const SHADSCALE = S([":.:"], "g");
-
   // Built things and animals
   const CABIN = S(["      |=|  ", " _____|_|_ ", "/_________\\", " | [] |  | ", " |____|__| "], ["      ttt  ", " ttttttttt ", "ttttttttttt", " t nn t  t ", " ttttttttt "]);
   const WINDMILL = S([" \\|/ ", " -o- ", " /|\\>", " /|\\ ", "/ | \\"], "t");
@@ -195,10 +189,8 @@
   const DEER = S(["   ),", " __/'", " /  \\"], "a");
   const PRONGHORN = S(["    ;", " ___/'", " / \\ "], "a");
   const GROUSE = S([" ,~~.", "(@@@)>", "  '' "], ["aaaaa", "affaaa", "  aa "]);
-  const BIGHORN = S(["  @,", "__/'", "/ /\\"], "a");
   const ROADRUNNER = S(["   _,", "__/'>", "  /\\ "], "a");
   const COYOTE = S(["   ^ ", "  /'\\", "_/ /|", "/ |  "], "a");
-  const ARCH = S([" .-----------. ", "/   _______   \\", "|  /       \\  |", "| |         | |"], "k");
 
   const BIOMES: Biome[] = [
     {
@@ -247,21 +239,6 @@
       density: 0.65,
     },
     {
-      name: "canyon",
-      far: { kind: "mesa", freq: 1.1, amp: 0.95 },
-      mid: { kind: "mesa", freq: 1.6, amp: 0.85 },
-      near: { kind: "mesa", freq: 1.3, amp: 0.8 },
-      fore: { kind: "rolling", freq: 1.8, amp: 0.4 },
-      texture: "strata",
-      alpineSnow: false,
-      dots: ["", "o"],
-      dotDensity: 0.14,
-      ground: "..`.,.o",
-      back: [JUNIPER_S, SAGE_S, BUNCH_S, SHADSCALE, SHADSCALE],
-      front: [JUNIPER, SAGE_M, COTTONWOOD, BUNCH, SAGE_S],
-      density: 0.45,
-    },
-    {
       name: "sonoran",
       far: { kind: "ridged", freq: 2.2, amp: 0.75 },
       mid: { kind: "rolling", freq: 2.4, amp: 0.5 },
@@ -275,21 +252,6 @@
       back: [SAGUARO_S, BARREL, PEAR, CREOSOTE, CREOSOTE, CHOLLA],
       front: [SAGUARO_L, SAGUARO_M, SAGUARO_M, OCOTILLO, PEAR, BARREL, CHOLLA, CREOSOTE],
       density: 0.6,
-    },
-    {
-      name: "playa",
-      far: { kind: "ridged", freq: 2.0, amp: 0.9 },
-      mid: { kind: "ridged", freq: 1.5, amp: 0.4 },
-      near: { kind: "dunes", freq: 3.2, amp: 0.25 },
-      fore: { kind: "flat", freq: 1.2, amp: 0.12 },
-      texture: "stipple",
-      alpineSnow: false,
-      dots: ["", ""],
-      dotDensity: 0,
-      ground: "._",
-      back: [SHADSCALE, SHADSCALE, GREASEWOOD],
-      front: [GREASEWOOD, SHADSCALE, SAGE_S],
-      density: 0.22,
     },
   ];
 
@@ -326,12 +288,8 @@
     for (let x = 0; x < cols; x++) {
       const t = ((x * charW) / 1000) * spec.freq;
       let h: number;
-      if (spec.kind === "ridged") h = ridgedFbm(t, seed, 4);
-      else if (spec.kind === "dunes") {
-        // Long windward slope, short steep slip face.
-        const p = (((t + 0.6 * fbm(t * 0.4, seed + 5, 2)) % 1) + 1) % 1;
-        h = (p < 0.8 ? p / 0.8 : (1 - p) / 0.2) * (0.45 + 0.55 * fbm(t * 0.3, seed + 9, 2));
-      } else h = fbm(t, seed, spec.kind === "flat" ? 2 : 3);
+      h = spec.kind === "ridged" ? ridgedFbm(t, seed, 4) : fbm(t, seed, 3);
+
       raw[x] = h;
     }
     let lo = Infinity, hi = -Infinity;
@@ -445,7 +403,7 @@
   function crownLayer(season: Season) {
     return season === "fall" ? "gold" : "veg";
   }
-  function paintCode(p: string, season: Season, base: string) {
+  function paintCode(p: string, season: Season) {
     switch (p) {
       case "g": return "veg";
       case "d": return "vegd";
@@ -460,19 +418,18 @@
       case "a": return "fauna";
       case "t": return "built";
       case "n": return "glow";
-      case "k": return base;
       default: return "veg";
     }
   }
 
-  function stamp(grid: Grid, shape: Shape, x: number, ground: number, season: Season, base = "veg") {
+  function stamp(grid: Grid, shape: Shape, x: number, ground: number, season: Season) {
     const rows = grid.length;
     const cols = grid[0].length;
     for (const c of shape.cells) {
       const gy = ground + c.dy;
       const gx = x + c.dx;
       if (gy < 0 || gy >= rows || gx < 0 || gx >= cols) continue;
-      grid[gy][gx] = { ch: c.ch, layer: paintCode(c.p, season, base) };
+      grid[gy][gx] = { ch: c.ch, layer: paintCode(c.p, season) };
     }
   }
 
@@ -490,7 +447,6 @@
     biome: Biome;
     season: Season;
     tod: Tod;
-    dark: boolean;
     cols: number;
     rows: number;
     charW: number;
@@ -520,7 +476,6 @@
     const season = (["spring", "summer", "fall", "winter"].includes(params.get("season") || "") ? params.get("season") : seasonOf(month)) as Season;
     const hour = now.getHours() + now.getMinutes() / 60;
     const tod = (["dawn", "day", "dusk", "night"].includes(params.get("tod") || "") ? params.get("tod") : todOf(hour)) as Tod;
-    const dark = document.documentElement.getAttribute("data-theme") === "dark";
     const wind = rng() < 0.7 ? 1 : -1;
 
     const charW = measure(pre, "#".repeat(20), 20, "w");
@@ -542,12 +497,10 @@
     const grid: Grid = Array.from({ length: rows }, () => new Array(cols).fill(null));
     const skyRows = Math.round(rows * cf * 0.55);
 
-    // Sun by day, moon at night or in the dark theme. Its horizontal
-    // position follows the clock and sets which side slopes are lit.
-    const useMoon = dark || tod === "night";
-    const nightU = (((hour + 24 - 18) % 24) / 12);
-    const dayU = clamp((hour - 6) / 14, 0, 1);
-    const u = useMoon ? clamp(nightU, 0, 1) : dayU;
+
+    // The moon crosses the sky once a day, rising at the left in the
+    // evening. Its position sets which side of each slope is lit.
+    const u = ((hour + 24 - 18) % 24) / 24;
     const lightLeft = u < 0.5;
     const skyX = Math.round(cols * (0.06 + 0.88 * u));
 
@@ -560,7 +513,7 @@
     // Stars, with a rare constellation and, in summer, a Milky Way band.
     const stars: [number, number, string][] = [];
     let moon: Scene["moon"] = null;
-    if (dark) {
+    {
       const milky = season === "summer" && rng() < 0.35;
       const slope = r(-0.5, 0.5);
       const count = Math.floor(cols * skyRows * 0.035);
@@ -601,18 +554,11 @@
         if (pts === sets.other && cy + 1 < skyRows) grid[cy + 1][cx + 5] = { ch: ".", layer: "star" };
       }
     }
-    if (useMoon) {
-      const glyph = moonGlyph(moonPhase(now));
+
+    const glyph = moonGlyph(moonPhase(now));
+    if (glyph) {
       const y = Math.round(skyRows * (0.15 + 0.6 * (1 - Math.sin(Math.PI * u))));
-      if (glyph) moon = { x: skyX, y: Math.min(y, far[clamp(skyX, 0, cols - 1)] - 3), glyph };
-    } else {
-      const y = Math.round(skyRows * (0.1 + 0.75 * (1 - Math.sin(Math.PI * u))));
-      const sy = clamp(Math.min(y, far[clamp(skyX, 0, cols - 1)] - 3), 1, rows - 2);
-      const sun = ["\\|/", "-O-", "/|\\"];
-      for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
-        const x = skyX - 1 + j, yy = sy - 1 + i;
-        if (x >= 0 && x < cols && yy >= 0) grid[yy][x] = { ch: sun[i][j], layer: "sun" };
-      }
+      moon = { x: skyX, y: Math.min(y, far[clamp(skyX, 0, cols - 1)] - 3), glyph };
     }
 
     const tex = biome.texture;
@@ -645,17 +591,17 @@
         const ch = h < 0.09 ? biome.ground[Math.floor(h * 1000) % biome.ground.length] : " ";
         grid[y][x] = { ch, layer: ch === " " ? "" : "fore" };
       }
-      const tuft = biome.name !== "playa" && hash2(x, 5, SEED) < 0.07;
+      const tuft = hash2(x, 5, SEED) < 0.07;
       grid[top][x] = { ch: prev > top ? "/" : next > top ? "\\" : tuft ? "," : "_", layer: "fore" };
     }
 
-    const chimney = paintFeatures(grid, biome, season, tod, dark, far, near, fore, cols, rows);
+    const chimney = paintFeatures(grid, biome, season, far, near, fore, cols, rows);
     paintPlants(grid, biome, season, fore, cols, rows);
 
     return {
       html: render(grid, rows, cols),
       scene: {
-        biome, season, tod, dark, cols, rows, charW, lineH, offX, offY, fore,
+        biome, season, tod, cols, rows, charW, lineH, offX, offY, fore,
         skyRows, stars, moon, chimney, wind, month, date: now.getDate(),
       },
     };
@@ -668,7 +614,7 @@
   function paintPlants(grid: Grid, biome: Biome, season: Season, fore: number[], cols: number, rows: number) {
     const back = seasonal(biome.back, season);
     const front = seasonal(biome.front, season);
-    const burn = biome.name !== "playa" && biome.name !== "canyon" && rng() < 0.1;
+    const burn = rng() < 0.1;
     const burnAt = r(0.1, 0.7) * cols;
     const burnW = r(0.15, 0.3) * cols;
     const placed: [Shape, number, number][] = [];
@@ -692,16 +638,15 @@
     for (const [s, x, y] of placed) stamp(grid, s, x, y, season);
   }
 
-  // Fences, poles, cabins, arches and animals. Each is a coin flip per
+  // Fences, windmills, cabins and animals. Each is a coin flip per
   // visit so most scenes have one or two and some have none.
-  function paintFeatures(grid: Grid, biome: Biome, season: Season, tod: Tod, dark: boolean, far: number[], near: number[], fore: number[], cols: number, rows: number) {
+  function paintFeatures(grid: Grid, biome: Biome, season: Season, far: number[], near: number[], fore: number[], cols: number, rows: number) {
     let chimney: [number, number] | null = null;
     const spot = (lo = 0.1, hi = 0.9) => Math.floor(r(cols * lo, cols * hi));
     const onFore = (s: Shape, x: number, depth = 0) => stamp(grid, rng() < 0.5 ? s : mirror(s), x, Math.min(rows - 1, fore[x] + depth), season);
     const n = biome.name;
 
-    if (n === "steppe" && rng() < 0.45) paintWire(grid, fore, cols, 2, Math.max(6, Math.floor(cols / r(14, 22))), "|", 0.25);
-    if (n === "playa" && rng() < 0.7) paintWire(grid, fore, cols, 4, Math.max(20, Math.floor(cols / r(5, 8))), "T", 1);
+    if (n === "steppe" && rng() < 0.45) paintFence(grid, fore, cols, Math.max(6, Math.floor(cols / r(14, 22))));
     if (n === "steppe" && rng() < 0.12) onFore(WINDMILL, spot(), 0);
     if (n === "steppe" && rng() < 0.3) {
       const x = spot(0.15, 0.75);
@@ -709,32 +654,18 @@
       const s = rng() < 0.5 ? COW : mirror(COW);
       for (let i = 0; i < herd; i++) stamp(grid, s, x + i * Math.floor(r(11, 18)), Math.min(rows - 1, fore[x] + 2 + i), season);
     }
-    if ((n === "steppe" || n === "playa") && rng() < 0.15) onFore(PRONGHORN, spot());
+    if (n === "steppe" && rng() < 0.15) onFore(PRONGHORN, spot());
     if (n === "steppe" && season === "spring" && rng() < 0.3) onFore(GROUSE, spot(), 1);
     if (n === "alpine" && rng() < 0.15) {
       const x = spot(0.1, 0.85);
       const y = Math.min(rows - 1, fore[x] + 1);
       stamp(grid, CABIN, x, y, season);
-      if (!(dark || tod === "night" || tod === "dusk")) for (const c of CABIN.cells) if (c.p === "n") grid[y + c.dy][x + c.dx] = { ch: c.ch, layer: "built" };
       chimney = [x + 2, y - CABIN.h];
     }
     if (n === "alpine" && rng() < 0.15) onFore(ELK, spot());
     if (n === "juniper" && rng() < 0.18) onFore(DEER, spot());
-    if (n === "canyon" && rng() < 0.3) {
-      // An arch on a level stretch of the near rim.
-      for (let tries = 0; tries < 30; tries++) {
-        const x = spot(0.08, 0.85);
-        const w = ARCH.w;
-        const seg = near.slice(x - 7, x + w - 7);
-        if (seg.length < w) continue;
-        if (Math.max(...seg) - Math.min(...seg) > 1) continue;
-        stamp(grid, ARCH, x, Math.min(...seg) - 1, season, "near");
-        break;
-      }
-    }
-    if (n === "canyon" && rng() < 0.2) onFore(BIGHORN, spot());
     if (n === "sonoran" && rng() < 0.15) onFore(ROADRUNNER, spot(), 2);
-    if (n === "sonoran" && (dark || tod === "night") && rng() < 0.25) {
+    if (n === "sonoran" && rng() < 0.25) {
       const x = spot(0.1, 0.9);
       stamp(grid, mirror(COYOTE), x, near[x], season);
     }
@@ -753,20 +684,20 @@
     return chimney;
   }
 
-  // Posts with a strand of wire between them. Fence wire sits low and
-  // straight; utility lines hang a little between tall poles.
-  function paintWire(grid: Grid, ridge: number[], cols: number, height: number, gap: number, post: string, sag: number) {
+  // Fence posts with a strand of wire that sags a little between them.
+  function paintFence(grid: Grid, ridge: number[], cols: number, gap: number) {
+    const height = 2;
     let last: [number, number] | null = null;
     for (let x = Math.floor(r(2, gap)); x < cols - 2; x += gap) {
       const top = ridge[x];
       if (top - height < 0) continue;
-      for (let i = 1; i <= height; i++) grid[top - i][x] = { ch: i === height ? post : "|", layer: "built" };
-      const wy = top - height + (post === "T" ? 0 : 1);
+      for (let i = 1; i <= height; i++) grid[top - i][x] = { ch: "|", layer: "built" };
+      const wy = top - height + 1;
       if (last) {
         const [lx, ly] = last;
         for (let wx = lx + 1; wx < x; wx++) {
           const u = (wx - lx) / (x - lx);
-          const y = Math.round(ly + (wy - ly) * u + sag * Math.sin(Math.PI * u) * 1.2);
+          const y = Math.round(ly + (wy - ly) * u + 0.3 * Math.sin(Math.PI * u));
           if (y >= 0 && y < ridge[wx]) grid[y][wx] = { ch: "-", layer: "built" };
         }
       }
@@ -895,14 +826,14 @@
     return cellTop(s, Math.min(s.rows - 3, s.fore[x] + rand(2, 5)));
   };
 
-  const EVENT_KINDS = ["bird", "flock", "hawk", "cloud", "leaves", "tumbleweed", "dustdevil", "plane", "balloon", "butterfly", "bats", "meteor", "satellite", "ufo", "cow"] as const;
+  const EVENT_KINDS = ["bird", "flock", "hawk", "cloud", "leaves", "tumbleweed", "dustdevil", "plane", "balloon", "butterfly", "bats", "meteor", "satellite", "ufo"] as const;
   type EventKind = (typeof EVENT_KINDS)[number];
 
   function eventWeights(s: Scene): [EventKind, number][] {
     const n = s.biome.name;
-    const open = n === "steppe" || n === "playa" || n === "sonoran" || n === "canyon" || n === "juniper";
-    const dry = n === "playa" || n === "sonoran" || n === "steppe";
-    const night = s.dark || s.tod === "night";
+    const open = n !== "alpine";
+    const dry = n === "sonoran" || n === "steppe";
+    const night = s.tod === "night";
     const october = s.month === 9;
     const shower = (s.month === 7 && s.date >= 9 && s.date <= 15) || (s.month === 11 && s.date >= 10 && s.date <= 16);
     if (night) {
@@ -912,7 +843,7 @@
         ["meteor", shower ? 2.5 : 0.5],
         ["satellite", 0.8],
         ["bird", 0.25],
-        ["ufo", n === "playa" || n === "sonoran" ? 0.04 : 0],
+        ["ufo", n === "sonoran" ? 0.04 : 0],
       ];
     }
     return [
@@ -920,12 +851,12 @@
       ["flock", s.season === "fall" || s.season === "spring" ? 1.6 : 0.6],
       ["hawk", open ? 1 : 0.4],
       ["cloud", 3],
-      ["leaves", s.season === "fall" && (n === "alpine" || n === "canyon") ? 2 : 0],
+      ["leaves", s.season === "fall" && n === "alpine" ? 2 : 0],
       ["tumbleweed", dry && s.season !== "spring" ? 1 : 0],
-      ["dustdevil", (n === "playa" || n === "sonoran") && s.season !== "winter" ? 0.5 : 0],
+      ["dustdevil", n === "sonoran" && s.season !== "winter" ? 0.5 : 0],
       ["plane", 0.25],
       ["balloon", 0.1],
-      ["butterfly", (s.season === "spring" || s.season === "summer") && n !== "playa" ? 0.9 : 0],
+      ["butterfly", s.season === "spring" || s.season === "summer" ? 0.9 : 0],
       ["bats", october && s.tod === "dusk" ? 1.5 : 0],
     ];
   }
@@ -1046,14 +977,6 @@
         const dur = 14;
         const { el } = crosser(layer, "wx-sky wx-ufo", "  .-.\n.(___).", skyY(s, 0.2, 0.7), dur, 0, 1);
         el.style.setProperty("--xm", layer.clientWidth * rand(0.25, 0.7) + "px");
-        retire(el, dur, 0);
-        break;
-      }
-      case "cow": {
-        const dir = Math.random() < 0.5 ? 1 : -1;
-        const art = dir > 0 ? "  ____  ,\n (____)'o)\n  || ||" : ",  ____\n(o'(____)\n  || ||";
-        const dur = 30;
-        const { el } = crosser(layer, "wx-ground wx-cow", art, groundY(s) - s.lineH * 2, dur, 0, dir, "wx-plod");
         retire(el, dur, 0);
         break;
       }
@@ -1178,7 +1101,6 @@
     const n = scene.biome.name;
     const precip: "snow" | "rain" | null =
       scene.season === "winter" ? (n === "sonoran" ? null : "snow")
-      : n === "playa" ? null
       : n === "sonoran" ? (scene.season === "summer" ? "rain" : null)
       : n === "alpine" && scene.season !== "summer" ? "snow"
       : "rain";
@@ -1201,29 +1123,6 @@
     resizeTimer = setTimeout(() => generate(), 250);
   });
 
-  // The theme decides between a day and a night sky, so redraw the same
-  // scene when it flips.
-  new MutationObserver(() => generate(true)).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-
-  // Two small keyboard eggs: type "moo", or the old cheat code for a
-  // meteor shower.
-  const KONAMI = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
-  let keys: string[] = [];
-  window.addEventListener("keydown", (e) => {
-    const t = e.target as HTMLElement | null;
-    if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-    keys = [...keys, e.key].slice(-10);
-    const layer = document.getElementById("ascii-landscape-weather");
-    if (!layer || !scene) return;
-    if (keys.slice(-3).join("").toLowerCase() === "moo") {
-      trySpawn(layer, "cow");
-      keys = [];
-    } else if (keys.join(",") === KONAMI.join(",")) {
-      for (let i = 0; i < MAX_SPRITES; i++) setTimeout(() => trySpawn(layer, "meteor"), i * 350);
-      keys = [];
-    }
-  });
-
   // Defer the first generation by a frame so real page content paints
   // immediately instead of the whole page blocking on building and
   // inserting a large grid before anything is visible at all.
@@ -1239,9 +1138,9 @@
     pointer-events: none;
     --small: clamp(6px, 0.82vw, 11px);
 
-    --bark: #6e5638; --pale: #8f8878; --gold: #b5862a; --bloom: #b08a26;
-    --bloom2: #6a5f9e; --bloom3: #a8483a; --cheat: #94706c; --fauna: #4a3f30;
-    --built: #6b5738; --sun: #b5763a; --smoke: #8d8576; --glow-win: #c08a3a;
+    --bark: #8f7350; --pale: #cfc6ad; --gold: #d9a63c; --bloom: #d9b44a;
+    --bloom2: #9c8fd6; --bloom3: #d9705a; --cheat: #a88088; --fauna: #c9bc98;
+    --built: #9a8460; --smoke: #6f6a5c; --glow-win: #e8b45a;
   }
 
   .ascii-landscape-art {
@@ -1261,7 +1160,6 @@
 
   .ascii-landscape-art :global(.L-star) { color: var(--ink); opacity: 0.8; }
   .ascii-landscape-art :global(.L-star2) { color: var(--ink-2); opacity: 0.45; }
-  .ascii-landscape-art :global(.L-sun) { color: var(--sun); opacity: 0.75; }
   .ascii-landscape-art :global(.L-far) { color: var(--land-far); }
   .ascii-landscape-art :global(.L-mid) { color: var(--land-mid); }
   .ascii-landscape-art :global(.L-near) { color: var(--land-near); }
@@ -1282,75 +1180,30 @@
   .ascii-landscape-art :global(.L-glow) { color: var(--glow-win); }
   .ascii-landscape-art :global(.L-smoke) { color: var(--smoke); opacity: 0.6; }
 
-  /* Low sun warms the distant ranges. */
+  /* At dawn and dusk the distant ranges warm up. */
   .ascii-landscape[data-tod="dawn"] .ascii-landscape-art :global(.L-far),
   .ascii-landscape[data-tod="dusk"] .ascii-landscape-art :global(.L-far) { color: color-mix(in oklab, var(--land-far) 62%, #d06a3e); }
   .ascii-landscape[data-tod="dawn"] .ascii-landscape-art :global(.L-mid),
   .ascii-landscape[data-tod="dusk"] .ascii-landscape-art :global(.L-mid) { color: color-mix(in oklab, var(--land-mid) 80%, #c0603a); }
 
-  /* ===== Biome palettes, glyph color only. Light mode: far lightest,
-     fore darkest (daytime haze). Dark mode: far darkest, fore lightest
-     (nearer things catch more of what light there is). veg is the main
-     plant color, vegd the second (grasses, pinyon, fir). ===== */
+  /* ===== Biome palettes, glyph color only. Far ranges darkest, fore
+     lightest: nearer things catch more of what light there is. veg is
+     the main plant color, vegd the second (grasses, pinyon, fir). ===== */
   .ascii-landscape[data-biome="alpine"] {
-    --land-far: #a3ae9e; --land-mid: #6f8f7a; --land-near: #3d6450; --land-fore: #34492c;
-    --land-veg: #2f7a4a; --land-vegd: #2a5e3c; --land-snow: #fbf8ee;
-  }
-  .ascii-landscape[data-biome="steppe"] {
-    --land-far: #a6a59a; --land-mid: #a8915a; --land-near: #7e6438; --land-fore: #57462a;
-    --land-veg: #6b7d5c; --land-vegd: #8f8148; --land-snow: #fbf8ee;
-  }
-  .ascii-landscape[data-biome="juniper"] {
-    --land-far: #b3a58c; --land-mid: #a3875e; --land-near: #84664a; --land-fore: #5a4630;
-    --land-veg: #4c6b3e; --land-vegd: #3f5a36; --land-snow: #fbf8ee;
-  }
-  .ascii-landscape[data-biome="canyon"] {
-    --land-far: #c4a28c; --land-mid: #b9805c; --land-near: #9c5638; --land-fore: #6b3d24;
-    --land-veg: #5a7a3a; --land-vegd: #6b7d4a; --land-snow: #fbf8ee;
-  }
-  .ascii-landscape[data-biome="sonoran"] {
-    --land-far: #b7a79a; --land-mid: #b98a4e; --land-near: #8e6234; --land-fore: #5f3f1c;
-    --land-veg: #4f7a34; --land-vegd: #7a7a3c; --land-snow: transparent;
-  }
-  .ascii-landscape[data-biome="playa"] {
-    --land-far: #9fa3a0; --land-mid: #a39d88; --land-near: #b3a580; --land-fore: #847857;
-    --land-veg: #6e7c52; --land-vegd: #84794a; --land-snow: #fbf8ee;
-  }
-
-  /* No bare @media (prefers-color-scheme: dark) fallback here:
-     theme-toggle.js always sets data-theme explicitly (from
-     localStorage or the OS preference) before this component's own
-     script runs, and a media-query rule would keep re-asserting dark
-     colors on top of an explicit data-theme="light" choice whenever
-     the OS itself still prefers dark. */
-  :global(html[data-theme="dark"]) .ascii-landscape {
-    --bark: #8f7350; --pale: #cfc6ad; --gold: #d9a63c; --bloom: #d9b44a;
-    --bloom2: #9c8fd6; --bloom3: #d9705a; --cheat: #a88088; --fauna: #c9bc98;
-    --built: #9a8460; --sun: #c98a54; --smoke: #6f6a5c; --glow-win: #e8b45a;
-  }
-  :global(html[data-theme="dark"]) .ascii-landscape[data-biome="alpine"] {
     --land-far: #37464f; --land-mid: #2f5546; --land-near: #3b6a4c; --land-fore: #6a9668;
     --land-veg: #3fa368; --land-vegd: #2f8a55; --land-snow: #dfe9e6;
   }
-  :global(html[data-theme="dark"]) .ascii-landscape[data-biome="steppe"] {
+  .ascii-landscape[data-biome="steppe"] {
     --land-far: #424a56; --land-mid: #615641; --land-near: #85704a; --land-fore: #b89c62;
     --land-veg: #8fa080; --land-vegd: #a89a5e; --land-snow: #dfe9e6;
   }
-  :global(html[data-theme="dark"]) .ascii-landscape[data-biome="juniper"] {
+  .ascii-landscape[data-biome="juniper"] {
     --land-far: #4a4640; --land-mid: #6b5a42; --land-near: #8c7052; --land-fore: #b8986c;
     --land-veg: #6f9a5a; --land-vegd: #5d8a4f; --land-snow: #dfe9e6;
   }
-  :global(html[data-theme="dark"]) .ascii-landscape[data-biome="canyon"] {
-    --land-far: #5a4038; --land-mid: #85503a; --land-near: #b06844; --land-fore: #d98f5e;
-    --land-veg: #7aa04e; --land-vegd: #8a9a5a; --land-snow: #dfe9e6;
-  }
-  :global(html[data-theme="dark"]) .ascii-landscape[data-biome="sonoran"] {
+  .ascii-landscape[data-biome="sonoran"] {
     --land-far: #574a48; --land-mid: #85603a; --land-near: #a67a3a; --land-fore: #d4a65e;
     --land-veg: #6ba33e; --land-vegd: #a0a052; --land-snow: transparent;
-  }
-  :global(html[data-theme="dark"]) .ascii-landscape[data-biome="playa"] {
-    --land-far: #444c58; --land-mid: #5c5a50; --land-near: #8a8268; --land-fore: #b8ad8a;
-    --land-veg: #8a9a6a; --land-vegd: #a09868; --land-snow: #dfe9e6;
   }
 
   /* ===== Weather, wildlife and ambient overlay ===== */
