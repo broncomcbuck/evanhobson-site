@@ -59,6 +59,26 @@ const canonicalUrl =
     </div>
 
     <footer class="site-footer">
+      <div class="quotes">
+        <figure>
+          <blockquote>
+            "Earth's crammed with heaven,<br />
+            And every common bush afire with God;<br />
+            But only he who sees, takes off his shoes."
+          </blockquote>
+          <figcaption>Elizabeth Barrett Browning, <cite>Aurora Leigh</cite></figcaption>
+        </figure>
+        <figure>
+          <blockquote>
+            "The wonder is not what the human eye may see, rather, that it sees anything at all."
+          </blockquote>
+          <figcaption>
+            Lawrence E. Corbridge,
+            <a href="https://speeches.byu.edu/talks/lawrence-e-corbridge/stand-forever/"><cite>Stand Forever</cite></a>,
+            BYU devotional, 22 January 2019
+          </figcaption>
+        </figure>
+      </div>
       <div class="site-footer-inner">
         <span>&copy; {new Date().getFullYear()} Evan Hobson</span>
         <span class="sep">·</span>
@@ -101,6 +121,38 @@ const canonicalUrl =
     padding: 1.5rem 0 2.5rem;
     border-top: 1px solid var(--line);
     background: var(--paper-2);
+  }
+
+  .quotes {
+    width: min(1100px, calc(100% - 2rem));
+    margin: 0 auto 1.4rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.2rem 2.5rem;
+    color: var(--ink-2);
+  }
+
+  .quotes figure {
+    margin: 0;
+    max-width: 44ch;
+    justify-self: center;
+  }
+
+  .quotes blockquote {
+    margin: 0 0 0.4rem;
+    font-style: italic;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+
+  .quotes figcaption {
+    font-size: 0.88rem;
+  }
+
+  .quotes a {
+    color: var(--water);
+    text-decoration: none;
+    border-bottom: 1px solid color-mix(in oklab, var(--water) 45%, transparent);
   }
 
   .site-footer-inner {
